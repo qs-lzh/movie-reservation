@@ -12,9 +12,9 @@ import (
 type ShowtimeService interface {
 	CreateShowtime(movieID uint, startTime time.Time, hallID uint) error
 	UpdateShowtime(showtimeID uint, startTime time.Time, hallID uint) error
-	DeleteShowtime(showtimeID uint) error
+	DeleteShowtimeByID(showtimeID uint) error
 	GetShowtimeByID(showtimeID uint) (*model.Showtime, error)
-	ListShowtimesByMovieID(movieID uint) ([]model.Showtime, error)
+	GetShowtimesByMovieID(movieID uint) ([]model.Showtime, error)
 }
 
 type showtimeService struct {
@@ -60,7 +60,7 @@ func (s *showtimeService) UpdateShowtime(showtimeID uint, startTime time.Time, h
 	return nil
 }
 
-func (s *showtimeService) DeleteShowtime(showtimeID uint) error {
+func (s *showtimeService) DeleteShowtimeByID(showtimeID uint) error {
 	if err := s.repo.DeleteByID(uint(showtimeID)); err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (s *showtimeService) GetShowtimeByID(showtimeID uint) (*model.Showtime, err
 	return showtime, nil
 }
 
-func (s *showtimeService) ListShowtimesByMovieID(movieID uint) ([]model.Showtime, error) {
+func (s *showtimeService) GetShowtimesByMovieID(movieID uint) ([]model.Showtime, error) {
 	showtimes, err := s.repo.GetByMovieID(uint(movieID))
 	if err != nil {
 		return nil, err
