@@ -10,7 +10,11 @@ import (
 
 type ShowtimeRepo interface {
 	Create(showtime *model.Showtime) error
+	GetByID(id uint) (model.Showtime, error)
+	DeleteByID(id uint) error
 	GetByMovieID(movieID uint) ([]*model.Showtime, error)
+	DeleteByMovieID(movieID uint) error
+	ListAll() ([]model.Showtime, error)
 }
 
 type showtimeRepoGorm struct {
@@ -23,17 +27,53 @@ func NewShowtimeRepoGorm(db *gorm.DB) *showtimeRepoGorm {
 	}
 }
 
-func (r *showtimeRepoGorm) Create(showtime *model.Showtime) error {
+func (r *showtimeRepoGorm) Create(showtime model.Showtime) error {
 	ctx := context.Background()
-	if err := gorm.G[model.Showtime](r.db).Create(ctx, showtime); err != nil {
+	if err := gorm.G[model.Showtime](r.db).Create(ctx, &showtime); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *showtimeRepoGorm) GetByMovieID(movieID uint) ([]*model.Showtime, error) {
+func (r *showtimeRepoGorm) GetByID(id uint) (model.Showtime, error) {
 	ctx := context.Background()
-	showtimes, err := gorm.G[*model.Showtime](r.db).Where(&model.Showtime{MovieID: movieID}).Find(ctx)
+	showtime, err := gorm.G[model.Showtime](r.db).Where(&model.Showtime{ID: id}).First(ctx)
+	if err != nil {
+		return model.Showtime{}, err
+	}
+	return showtime, nil
+}
+
+func (r *showtimeRepoGorm) DeleteByID(id uint) error {
+	ctx := context.Background()
+	_, err := gorm.G[model.Showtime](r.db).Where(&model.Showtime{ID: id}).Delete(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *showtimeRepoGorm) GetByMovieID(movieID uint) ([]model.Showtime, error) {
+	ctx := context.Background()
+	showtimes, err := gorm.G[model.Showtime](r.db).Where(&model.Showtime{MovieID: movieID}).Find(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return showtimes, nil
+}
+
+func (r *showtimeRepoGorm) DeleteByMovieID(movieID uint) error {
+	ctx := context.Background()
+	_, err := gorm.G[model.Showtime](r.db).Where(&model.Showtime{MovieID: movieID}).Delete(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *showtimeRepoGorm) ListAll() ([]model.Showtime, error) {
+	ctx := context.Background()
+	showtimes, err := gorm.G[model.Showtime](r.db).Find(ctx)
 	if err != nil {
 		return nil, err
 	}

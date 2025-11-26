@@ -11,6 +11,8 @@ import (
 type MovieRepo interface {
 	Create(movie *model.Movie) error
 	GetByID(id uint) (*model.Movie, error)
+	DeleteByID(id uint) error
+	ListAll() ([]model.Movie, error)
 }
 
 type movieRepoGorm struct {
@@ -38,4 +40,22 @@ func (r *movieRepoGorm) GetByID(id uint) (*model.Movie, error) {
 		return &model.Movie{}, err
 	}
 	return &movie, nil
+}
+
+func (r *movieRepoGorm) DeleteByID(id uint) error {
+	ctx := context.Background()
+	_, err := gorm.G[model.Movie](r.db).Where(&model.Movie{ID: id}).Delete(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *movieRepoGorm) ListAll() ([]model.Movie, error) {
+	ctx := context.Background()
+	movies, err := gorm.G[model.Movie](r.db).Find(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return movies, nil
 }

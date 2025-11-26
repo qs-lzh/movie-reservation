@@ -42,8 +42,10 @@ func TestMovieShowtimeRepo(t *testing.T) {
 	movieRepo := repository.NewMovieRepoGorm(db)
 	showtimeRepo := repository.NewShowtimeRepoGorm(db)
 
-	var movieID uint = 10002
+	// create a movie and several showtimes belong to it, store them in database
+	// and validate it is properly stored
 
+	var movieID uint = 10002
 	// store movie without showtimes
 	movie := &model.Movie{
 		ID:    movieID,
@@ -55,9 +57,9 @@ func TestMovieShowtimeRepo(t *testing.T) {
 	err = movieRepo.Create(movie)
 	require.NoError(t, err)
 
-	var showtimes []*model.Showtime
+	var showtimes []model.Showtime
 	for i := range 5 {
-		showtime := &model.Showtime{
+		showtime := model.Showtime{
 			MovieID: movieID,
 			StartAt: time.Now().AddDate(1, 0, i),
 		}
@@ -78,4 +80,24 @@ func TestMovieShowtimeRepo(t *testing.T) {
 	for _, showtime := range retrievedShowtimes {
 		require.Equal(t, movieID, showtime.MovieID)
 	}
+
+	// test delete
+
+	err = showtimeRepo.DeleteByID(1)
+	require.NoError(t, err)
+	// validate delete showtime properly
+	showtime, err := showtimeRepo.GetByMovieID(1)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(showtime))
+	//delete movie
+	err = showtimeRepo.DeleteByMovieID(movieID)
+	require.NoError(t, err)
+	err = movieRepo.DeleteByID(movieID)
+	require.NoError(t, err)
+
+	// drop all tables
+	db.Migrator().DropTable(
+		model.Movie{},
+		model.Showtime{},
+	)
 }
