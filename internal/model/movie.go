@@ -5,11 +5,10 @@ import (
 )
 
 type Movie struct {
-	ID          uint       `gorm:"primaryKey" json:"id"`
-	Title       string     `gorm:"type:varchar(100);not null" json:"title"`
-	Description string     `gorm:"type:text" json:"description"`
-	Genre       string     `gorm:"type:varchar(50)" json:"genre"`
-	Showtimes   []Showtime `gorm:"foreignKey:MovieID" json:"showtimes"`
+	ID          uint        `gorm:"primaryKey" json:"id"`
+	Title       string      `gorm:"type:varchar(100);not null" json:"title"`
+	Description string      `gorm:"type:text" json:"description"`
+	Showtimes   []*Showtime `gorm:"foreignKey:MovieID" json:"showtimes"`
 }
 
 type Showtime struct {
