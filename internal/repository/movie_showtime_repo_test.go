@@ -59,13 +59,13 @@ func TestMovieShowtimeRepo(t *testing.T) {
 
 	var showtimes []model.Showtime
 	for i := range 5 {
-		showtime := model.Showtime{
+		showtime := &model.Showtime{
 			MovieID: movieID,
 			StartAt: time.Now().AddDate(1, 0, i),
 		}
 		err := showtimeRepo.Create(showtime)
 		require.NoError(t, err)
-		showtimes = append(showtimes, showtime)
+		showtimes = append(showtimes, *showtime)
 	}
 
 	movie, err = movieRepo.GetByID(movieID)

@@ -20,6 +20,8 @@ type movieService struct {
 	repo repository.MovieRepo
 }
 
+var _ MovieService = (*movieService)(nil)
+
 func NewMovieService(db *gorm.DB) *movieService {
 	return &movieService{
 		db:   db,

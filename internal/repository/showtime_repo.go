@@ -9,8 +9,8 @@ import (
 )
 
 type ShowtimeRepo interface {
-	Create(showtime model.Showtime) error
-	GetByID(id uint) (model.Showtime, error)
+	Create(showtime *model.Showtime) error
+	GetByID(id uint) (*model.Showtime, error)
 	DeleteByID(id uint) error
 	GetByMovieID(movieID uint) ([]model.Showtime, error)
 	DeleteByMovieID(movieID uint) error
@@ -21,27 +21,29 @@ type showtimeRepoGorm struct {
 	db *gorm.DB
 }
 
+var _ ShowtimeRepo = (*showtimeRepoGorm)(nil)
+
 func NewShowtimeRepoGorm(db *gorm.DB) *showtimeRepoGorm {
 	return &showtimeRepoGorm{
 		db: db,
 	}
 }
 
-func (r *showtimeRepoGorm) Create(showtime model.Showtime) error {
+func (r *showtimeRepoGorm) Create(showtime *model.Showtime) error {
 	ctx := context.Background()
-	if err := gorm.G[model.Showtime](r.db).Create(ctx, &showtime); err != nil {
+	if err := gorm.G[model.Showtime](r.db).Create(ctx, showtime); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *showtimeRepoGorm) GetByID(id uint) (model.Showtime, error) {
+func (r *showtimeRepoGorm) GetByID(id uint) (*model.Showtime, error) {
 	ctx := context.Background()
 	showtime, err := gorm.G[model.Showtime](r.db).Where(&model.Showtime{ID: id}).First(ctx)
 	if err != nil {
-		return model.Showtime{}, err
+		return &model.Showtime{}, err
 	}
-	return showtime, nil
+	return &showtime, nil
 }
 
 func (r *showtimeRepoGorm) DeleteByID(id uint) error {

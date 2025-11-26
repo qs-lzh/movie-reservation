@@ -19,6 +19,8 @@ type movieRepoGorm struct {
 	db *gorm.DB
 }
 
+var _ MovieRepo = (*movieRepoGorm)(nil)
+
 func NewMovieRepoGorm(db *gorm.DB) *movieRepoGorm {
 	return &movieRepoGorm{
 		db: db,
