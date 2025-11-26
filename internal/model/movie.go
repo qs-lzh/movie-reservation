@@ -15,4 +15,5 @@ type Showtime struct {
 	ID      uint      `gorm:"primaryKey" json:"id"`
 	MovieID uint      `gorm:"not null" json:"movie_id"`
 	StartAt time.Time `gorm:"not null" json:"start_at"`
+	HallID  uint      `gorm:"not null" json:"hall_id"`
 }

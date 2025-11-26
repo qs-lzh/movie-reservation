@@ -9,10 +9,10 @@ import (
 )
 
 type ShowtimeRepo interface {
-	Create(showtime *model.Showtime) error
+	Create(showtime model.Showtime) error
 	GetByID(id uint) (model.Showtime, error)
 	DeleteByID(id uint) error
-	GetByMovieID(movieID uint) ([]*model.Showtime, error)
+	GetByMovieID(movieID uint) ([]model.Showtime, error)
 	DeleteByMovieID(movieID uint) error
 	ListAll() ([]model.Showtime, error)
 }

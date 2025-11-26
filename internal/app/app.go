@@ -1,12 +1,9 @@
 package app
 
 import (
-	"database/sql"
-
-	"github.com/qs-lzh/movie-reservation/internal/repository"
+	"gorm.io/gorm"
 )
 
 type App struct {
-	DB *sql.DB
-	MovieRepo *
+	DB *gorm.DB
 }

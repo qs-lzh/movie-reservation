@@ -20,5 +20,4 @@ func main() {
 		model.Movie{},
 		model.Showtime{},
 	)
-
 }
