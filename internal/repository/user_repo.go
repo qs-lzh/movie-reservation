@@ -9,6 +9,7 @@ import (
 
 type UserRepo interface {
 	Create(user *model.User) error
+	Delete(name string) error
 	GetHashedPassword(name string) (string, error)
 }
 
@@ -27,6 +28,15 @@ func NewUserRepoGorm(db *gorm.DB) *userRepoGorm {
 func (r *userRepoGorm) Create(user *model.User) error {
 	ctx := context.Background()
 	if err := gorm.G[model.User](r.db).Create(ctx, user); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *userRepoGorm) Delete(name string) error {
+	ctx := context.Background()
+	_, err := gorm.G[model.User](r.db).Where(&model.User{Name: name}).Delete(ctx)
+	if err != nil {
 		return err
 	}
 	return nil
