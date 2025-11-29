@@ -45,7 +45,6 @@ func (s *userService) DeleteUser(userName string, password string) error {
 	// check if user exists
 	user, err := s.repo.GetByName(userName)
 	if err != nil {
-		// the returned will be gorm.ErrRecordNotFound
 		return err
 	}
 	if user == nil {

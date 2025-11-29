@@ -57,6 +57,7 @@ func (r *userRepoGorm) GetByName(name string) (*model.User, error) {
 	ctx := context.Background()
 	user, err := gorm.G[model.User](r.db).Where(model.User{Name: name}).First(ctx)
 	if err != nil {
+		// the returned err will be gorm.ErrRecordNotFound
 		return &model.User{}, err
 	}
 	return &user, nil
