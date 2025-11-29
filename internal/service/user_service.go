@@ -42,13 +42,19 @@ func (s *userService) CreateUser(userName string, password string) error {
 }
 
 func (s *userService) DeleteUser(userName string, password string) error {
+	// check if user exists
+	user, err := s.repo.GetByName(userName)
+	if err != nil {
+		// the returned will be gorm.ErrRecordNotFound
+		return err
+	}
+	if user == nil {
+		return nil
+	}
+
 	hashedPassword, err := s.repo.GetHashedPassword(userName)
 	if err != nil {
 		return err
-	}
-	// if user does not exist
-	if hashedPassword == "" {
-		return nil
 	}
 	if err := s.hasher.Compare(hashedPassword, password); err != nil {
 		return err

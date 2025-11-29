@@ -38,14 +38,42 @@ func TestUserRepo(t *testing.T) {
 		Name:           "alice",
 		HashedPassword: "hashed_pw_123",
 	}
+	// Create user
 	err = repo.Create(user)
 	require.NoError(t, err)
+
+	// GetHashedPassword: existing user
 	hp, err := repo.GetHashedPassword("alice")
 	require.NoError(t, err)
 	require.Equal(t, "hashed_pw_123", hp)
+
+	// GetHashedPassword: non-existent user
 	hp, err = repo.GetHashedPassword("bob")
 	require.NoError(t, err)
 	require.Equal(t, "", hp)
+
+	// GetByName: existing user
+	gotUser, err := repo.GetByName("alice")
+	require.NoError(t, err)
+	require.Equal(t, user.Name, gotUser.Name)
+	require.Equal(t, user.HashedPassword, gotUser.HashedPassword)
+
+	// Delete: existing user
+	err = repo.Delete("alice")
+	require.NoError(t, err)
+
+	// After delete, GetHashedPassword should return empty string
+	hp, err = repo.GetHashedPassword("alice")
+	require.NoError(t, err)
+	require.Equal(t, "", hp)
+
+	// After delete, GetByName should return error (record not found)
+	_, err = repo.GetByName("alice")
+	require.Error(t, err)
+
+	// Delete: non-existent user should be no-op
+	err = repo.Delete("non-existent")
+	require.NoError(t, err)
 
 	db.Migrator().DropTable(
 		model.User{},

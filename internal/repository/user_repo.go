@@ -11,6 +11,7 @@ type UserRepo interface {
 	Create(user *model.User) error
 	Delete(name string) error
 	GetHashedPassword(name string) (string, error)
+	GetByName(name string) (*model.User, error)
 }
 
 type userRepoGorm struct {
@@ -50,4 +51,13 @@ func (r *userRepoGorm) GetHashedPassword(name string) (string, error) {
 	}
 	hashedPassword := user.HashedPassword
 	return hashedPassword, nil
+}
+
+func (r *userRepoGorm) GetByName(name string) (*model.User, error) {
+	ctx := context.Background()
+	user, err := gorm.G[model.User](r.db).Where(model.User{Name: name}).First(ctx)
+	if err != nil {
+		return &model.User{}, err
+	}
+	return &user, nil
 }
