@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+type User struct {
+	ID             uint   `gorm:"primaryKey" json:"id"`
+	Name           string `gorm:"not null;unique" json:"name"`
+	HashedPassword string `gorm:"not null" json:"hashed_password"`
+}
+
 type Movie struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
 	Title       string     `gorm:"type:varchar(100);not null" json:"title"`
@@ -16,4 +22,10 @@ type Showtime struct {
 	MovieID uint      `gorm:"not null" json:"movie_id"`
 	StartAt time.Time `gorm:"not null" json:"start_at"`
 	HallID  uint      `gorm:"not null" json:"hall_id"`
+}
+
+type Reservation struct {
+	ID         uint `gorm:"primaryKey" json:"id"`
+	ShowtimeID uint `gorm:"not null" json:"showtime_id"`
+	UserID     uint `gorm:"not null" json:"user_id"`
 }

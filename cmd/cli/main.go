@@ -2,15 +2,22 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"github.com/qs-lzh/movie-reservation/internal/model"
+	"github.com/qs-lzh/movie-reservation/internal/util"
 )
 
 func main() {
-	dsn := "host=localhost user=liuzihao password=cvbn123.. dbname=movie_db port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	err := util.LoadEnv()
+	if err != nil {
+		fmt.Printf("error: %v", err)
+		return
+	}
+	dsn := os.Getenv("DATABASE_DSN")
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		fmt.Printf("error: %v\n", err)

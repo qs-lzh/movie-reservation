@@ -17,7 +17,7 @@ import (
 func TestMovieService(t *testing.T) {
 	err := util.LoadEnv()
 	require.NoError(t, err)
-	dsn := os.Getenv("DATABASE_DSN")
+	dsn := os.Getenv("TEST_DATABASE_DSN")
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
