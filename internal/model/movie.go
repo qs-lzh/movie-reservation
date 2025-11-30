@@ -5,9 +5,10 @@ import (
 )
 
 type User struct {
-	ID             uint   `gorm:"primaryKey" json:"id"`
-	Name           string `gorm:"not null;unique" json:"name"`
-	HashedPassword string `gorm:"not null" json:"hashed_password"`
+	ID             uint     `gorm:"primaryKey" json:"id"`
+	Name           string   `gorm:"not null;unique" json:"name"`
+	HashedPassword string   `gorm:"not null" json:"hashed_password"`
+	Role           UserRole `gorm:"type:varchar(20);default'user';not null" json:"role"`
 }
 
 type Movie struct {
@@ -29,3 +30,10 @@ type Reservation struct {
 	ShowtimeID uint `gorm:"not null" json:"showtime_id"`
 	UserID     uint `gorm:"not null" json:"user_id"`
 }
+
+type UserRole string
+
+const (
+	RoleUser  UserRole = "user"
+	RoleAdmin UserRole = "admin"
+)
