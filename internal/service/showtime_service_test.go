@@ -76,7 +76,7 @@ func TestShowtimeService(t *testing.T) {
 	err = showtimeService.DeleteShowtimeByID(showtimeID)
 	require.NoError(t, err)
 	_, err = showtimeService.GetShowtimeByID(showtimeID)
-	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	require.ErrorIs(t, err, service.ErrNotFound)
 
 	db.Migrator().DropTable(
 		model.Movie{},

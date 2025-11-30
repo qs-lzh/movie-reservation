@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -46,6 +47,9 @@ func (s *showtimeService) CreateShowtime(movieID uint, startTime time.Time, hall
 func (s *showtimeService) UpdateShowtime(showtimeID uint, startTime time.Time, hallID uint) error {
 	showtime, err := s.repo.GetByID(uint(showtimeID))
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
 		return err
 	}
 	if err := s.repo.DeleteByID(uint(showtimeID)); err != nil {
@@ -70,7 +74,10 @@ func (s *showtimeService) DeleteShowtimeByID(showtimeID uint) error {
 func (s *showtimeService) GetShowtimeByID(showtimeID uint) (*model.Showtime, error) {
 	showtime, err := s.repo.GetByID(uint(showtimeID))
 	if err != nil {
-		return &model.Showtime{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
 	}
 	return showtime, nil
 }

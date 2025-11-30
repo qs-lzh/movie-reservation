@@ -77,7 +77,7 @@ func TestUserService(t *testing.T) {
 
 	// test DeleteUser on non-existent user should be no-op
 	err = userService.DeleteUser("non-existent", password)
-	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	require.ErrorIs(t, err, service.ErrNotFound)
 
 	// cleanup
 	db.Migrator().DropTable(

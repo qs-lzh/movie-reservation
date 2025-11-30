@@ -34,7 +34,7 @@ func TestMovieService(t *testing.T) {
 		model.Showtime{},
 	)
 
-	service := service.NewMovieService(db)
+	svc := service.NewMovieService(db)
 
 	// test CreateMovie
 	var movieID uint = 10002
@@ -44,33 +44,45 @@ func TestMovieService(t *testing.T) {
 		Description: `Harry Potter is a film series based on the Harry Potter series of novels by J. K. Rowling.
 		The series was produced and distributed by Warner Bros.Pictures and consists of eight fantasy films`,
 	}
-	err = service.CreateMovie(movie)
+	err = svc.CreateMovie(movie)
 	require.NoError(t, err)
 
 	// test GetMovieByID
-	movie, err = service.GetMovieByID(movieID)
+	movie, err = svc.GetMovieByID(movieID)
 	require.NoError(t, err)
 	require.Equal(t, movieID, movie.ID)
 
 	// test UpdateMovie
 	movieID = uint(10003)
-	movie.ID = movieID
-	err = service.UpdateMovie(movie)
+	originalMovie := &model.Movie{
+		ID:    movieID,
+		Title: "Original Movie",
+	}
+	err = svc.CreateMovie(originalMovie)
 	require.NoError(t, err)
-	movie, err = service.GetMovieByID(movieID)
+
+	updatedMovie := &model.Movie{
+		ID:    movieID,
+		Title: "Original Movie", // Use same title to find the movie
+		Description: "Updated description",
+	}
+	err = svc.UpdateMovie(updatedMovie)
+	require.NoError(t, err)
+	movie, err = svc.GetMovieByID(movieID)
 	require.NoError(t, err)
 	require.Equal(t, movieID, movie.ID)
+	require.Equal(t, "Updated description", movie.Description)
 
 	// test DeleteMovieByID
-	err = service.DeleteMovieByID(movieID)
+	err = svc.DeleteMovieByID(movieID)
 	require.NoError(t, err)
-	movie, err = service.GetMovieByID(movieID)
-	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
+	movie, err = svc.GetMovieByID(movieID)
+	require.ErrorIs(t, err, service.ErrNotFound)
 
 	// test GetAllMovies
-	err = service.CreateMovie(&model.Movie{ID: uint(10005)})
+	err = svc.CreateMovie(&model.Movie{ID: uint(10005)})
 	require.NoError(t, err)
-	movies, err := service.GetAllMovies()
+	movies, err := svc.GetAllMovies()
 	require.NoError(t, err)
 	require.Equal(t, 2, len(movies))
 

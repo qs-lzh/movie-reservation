@@ -67,12 +67,12 @@ func (s *userService) ValidateUser(userName string, password string) (bool, erro
 	user, err := s.repo.GetByName(userName)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, ErrNotFound
+			return false, nil
 		}
 		return false, err
 	}
 	if err = s.hasher.Compare(user.HashedPassword, password); err != nil {
-		return false, ErrInvalidCredential
+		return false, nil
 	}
 	return true, nil
 }
