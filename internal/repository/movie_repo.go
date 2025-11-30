@@ -11,8 +11,10 @@ import (
 type MovieRepo interface {
 	Create(movie *model.Movie) error
 	GetByID(id uint) (*model.Movie, error)
+	GetByTitle(title string) (*model.Movie, error)
 	DeleteByID(id uint) error
 	ListAll() ([]model.Movie, error)
+	Update(model.Movie) error
 }
 
 type movieRepoGorm struct {
@@ -45,6 +47,15 @@ func (r *movieRepoGorm) GetByID(id uint) (*model.Movie, error) {
 	return &movie, nil
 }
 
+func (r *movieRepoGorm) GetByTitle(title string) (*model.Movie, error) {
+	ctx := context.Background()
+	movie, err := gorm.G[model.Movie](r.db).Where(&model.Movie{Title: title}).First(ctx)
+	if err != nil {
+		return &model.Movie{}, err
+	}
+	return &movie, nil
+}
+
 func (r *movieRepoGorm) DeleteByID(id uint) error {
 	ctx := context.Background()
 	_, err := gorm.G[model.Movie](r.db).Where(&model.Movie{ID: id}).Delete(ctx)
@@ -61,4 +72,13 @@ func (r *movieRepoGorm) ListAll() ([]model.Movie, error) {
 		return nil, err
 	}
 	return movies, nil
+}
+
+// before use Update, please confirm the existance of the movie
+func (r *movieRepoGorm) Update(movie model.Movie) error {
+	ctx := context.Background()
+	if _, err := gorm.G[model.Movie](r.db).Updates(ctx, movie); err != nil {
+		return err
+	}
+	return nil
 }

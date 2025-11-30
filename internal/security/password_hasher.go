@@ -22,6 +22,7 @@ func (h *bcryptHasher) Hash(password string) (string, error) {
 	return string(bytes), err
 }
 
+// Returns nil on success, or an error on failure
 func (h *bcryptHasher) Compare(hash string, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }

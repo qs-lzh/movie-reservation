@@ -25,6 +25,7 @@ func TestUserRepo(t *testing.T) {
 		return
 	}
 
+	// drop and recreate table
 	db.Migrator().DropTable(
 		model.User{},
 	)
@@ -32,49 +33,51 @@ func TestUserRepo(t *testing.T) {
 		model.User{},
 	)
 
-	repo := repository.NewUserRepoGorm(db)
+	userRepo := repository.NewUserRepoGorm(db)
 
+	// test Create and GetByName
+	userName := "testuser"
 	user := &model.User{
-		Name:           "alice",
-		HashedPassword: "hashed_pw_123",
+		Name:           userName,
+		HashedPassword: "hashed_password_123",
 	}
-	// Create user
-	err = repo.Create(user)
-	require.NoError(t, err)
 
-	// GetHashedPassword: existing user
-	hp, err := repo.GetHashedPassword("alice")
+	err = userRepo.Create(user)
 	require.NoError(t, err)
-	require.Equal(t, "hashed_pw_123", hp)
+	require.NotZero(t, user.ID)
 
-	// GetHashedPassword: non-existent user
-	hp, err = repo.GetHashedPassword("bob")
+	// verify user is properly stored
+	retrievedUser, err := userRepo.GetByName(userName)
 	require.NoError(t, err)
-	require.Equal(t, "", hp)
+	require.Equal(t, userName, retrievedUser.Name)
+	require.Equal(t, "hashed_password_123", retrievedUser.HashedPassword)
+	require.Equal(t, user.ID, retrievedUser.ID)
 
-	// GetByName: existing user
-	gotUser, err := repo.GetByName("alice")
-	require.NoError(t, err)
-	require.Equal(t, user.Name, gotUser.Name)
-	require.Equal(t, user.HashedPassword, gotUser.HashedPassword)
-
-	// Delete: existing user
-	err = repo.Delete("alice")
-	require.NoError(t, err)
-
-	// After delete, GetHashedPassword should return empty string
-	hp, err = repo.GetHashedPassword("alice")
-	require.NoError(t, err)
-	require.Equal(t, "", hp)
-
-	// After delete, GetByName should return error (record not found)
-	_, err = repo.GetByName("alice")
+	// test GetByName for non-existent user
+	_, err = userRepo.GetByName("nonexistent_user")
 	require.Error(t, err)
 
-	// Delete: non-existent user should be no-op
-	err = repo.Delete("non-existent")
+	// test Create with duplicate name (should work for this test since we're testing repo methods)
+	anotherUser := &model.User{
+		Name:           userName, // same name as before
+		HashedPassword: "different_hashed_password",
+	}
+	err = userRepo.Create(anotherUser)
+	require.Error(t, err) // should error due to unique constraint
+
+	// test DeleteByName
+	err = userRepo.DeleteByName(userName)
 	require.NoError(t, err)
 
+	// verify user is deleted
+	_, err = userRepo.GetByName(userName)
+	require.Error(t, err)
+
+	// test DeleteByName for non-existent user (should not error)
+	err = userRepo.DeleteByName("nonexistent_user")
+	require.NoError(t, err)
+
+	// drop all tables
 	db.Migrator().DropTable(
 		model.User{},
 	)

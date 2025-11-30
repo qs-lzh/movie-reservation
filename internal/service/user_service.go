@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+
 	"github.com/qs-lzh/movie-reservation/internal/model"
 	"github.com/qs-lzh/movie-reservation/internal/repository"
 	"github.com/qs-lzh/movie-reservation/internal/security"
@@ -30,47 +32,47 @@ func NewUserService(db *gorm.DB) *userService {
 }
 
 func (s *userService) CreateUser(userName string, password string) error {
+	_, err := s.repo.GetByName(userName)
+	if err == nil {
+		return ErrAlreadyExists
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
 	hash, err := s.hasher.Hash(password)
 	if err != nil {
 		return err
 	}
-	user := &model.User{
+	return s.repo.Create(&model.User{
 		Name:           userName,
 		HashedPassword: hash,
-	}
-	return s.repo.Create(user)
+	})
 }
 
 func (s *userService) DeleteUser(userName string, password string) error {
-	// check if user exists
 	user, err := s.repo.GetByName(userName)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
 		return err
 	}
-	if user == nil {
-		return nil
+	if err = s.hasher.Compare(user.HashedPassword, password); err != nil {
+		return ErrInvalidCredential
 	}
-
-	hashedPassword, err := s.repo.GetHashedPassword(userName)
-	if err != nil {
-		return err
-	}
-	if err := s.hasher.Compare(hashedPassword, password); err != nil {
-		return err
-	}
-	return s.repo.Delete(userName)
+	return s.repo.DeleteByName(userName)
 }
 
 func (s *userService) ValidateUser(userName string, password string) (bool, error) {
-	hashedPassword, err := s.repo.GetHashedPassword(userName)
+	user, err := s.repo.GetByName(userName)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, ErrNotFound
+		}
 		return false, err
 	}
-	if hashedPassword == "" {
-		return false, nil
-	}
-	if err := s.hasher.Compare(hashedPassword, password); err != nil {
-		return false, nil
+	if err = s.hasher.Compare(user.HashedPassword, password); err != nil {
+		return false, ErrInvalidCredential
 	}
 	return true, nil
 }

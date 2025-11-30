@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+
 	"gorm.io/gorm"
 
 	"github.com/qs-lzh/movie-reservation/internal/model"
@@ -36,15 +38,15 @@ func (s *movieService) CreateMovie(movie *model.Movie) error {
 	return nil
 }
 
+// don't change movie's title
 func (s *movieService) UpdateMovie(movie *model.Movie) error {
-	id := movie.ID
-	if err := s.repo.DeleteByID(id); err != nil {
+	if _, err := s.repo.GetByTitle(movie.Title); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrNotFound
+		}
 		return err
 	}
-	if err := s.repo.Create(movie); err != nil {
-		return err
-	}
-	return nil
+	return s.repo.Update(*movie)
 }
 
 func (s *movieService) DeleteMovieByID(id uint) error {
@@ -57,7 +59,10 @@ func (s *movieService) DeleteMovieByID(id uint) error {
 func (s *movieService) GetMovieByID(id uint) (*model.Movie, error) {
 	movie, err := s.repo.GetByID(id)
 	if err != nil {
-		return &model.Movie{}, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
 	}
 	return movie, nil
 }

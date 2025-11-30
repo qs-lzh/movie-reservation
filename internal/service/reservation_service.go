@@ -1,8 +1,6 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/qs-lzh/movie-reservation/internal/repository"
 	"gorm.io/gorm"
 )

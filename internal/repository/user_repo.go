@@ -9,8 +9,7 @@ import (
 
 type UserRepo interface {
 	Create(user *model.User) error
-	Delete(name string) error
-	GetHashedPassword(name string) (string, error)
+	DeleteByName(name string) error
 	GetByName(name string) (*model.User, error)
 }
 
@@ -34,7 +33,7 @@ func (r *userRepoGorm) Create(user *model.User) error {
 	return nil
 }
 
-func (r *userRepoGorm) Delete(name string) error {
+func (r *userRepoGorm) DeleteByName(name string) error {
 	ctx := context.Background()
 	_, err := gorm.G[model.User](r.db).Where(&model.User{Name: name}).Delete(ctx)
 	if err != nil {
@@ -43,22 +42,11 @@ func (r *userRepoGorm) Delete(name string) error {
 	return nil
 }
 
-func (r *userRepoGorm) GetHashedPassword(name string) (string, error) {
-	ctx := context.Background()
-	user, err := gorm.G[model.User](r.db).Where(model.User{Name: name}).First(ctx)
-	if err != nil {
-		return "", nil
-	}
-	hashedPassword := user.HashedPassword
-	return hashedPassword, nil
-}
-
 func (r *userRepoGorm) GetByName(name string) (*model.User, error) {
 	ctx := context.Background()
 	user, err := gorm.G[model.User](r.db).Where(model.User{Name: name}).First(ctx)
 	if err != nil {
-		// the returned err will be gorm.ErrRecordNotFound
-		return &model.User{}, err
+		return nil, err
 	}
 	return &user, nil
 }
