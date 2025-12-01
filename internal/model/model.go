@@ -8,7 +8,7 @@ type User struct {
 	ID             uint     `gorm:"primaryKey" json:"id"`
 	Name           string   `gorm:"not null;unique" json:"name"`
 	HashedPassword string   `gorm:"not null" json:"hashed_password"`
-	Role           UserRole `gorm:"type:varchar(20);default'user';not null" json:"role"`
+	Role           UserRole `gorm:"default'user';not null" json:"role"`
 }
 
 type Movie struct {
@@ -17,6 +17,8 @@ type Movie struct {
 	Description string     `gorm:"type:text" json:"description"`
 	Showtimes   []Showtime `gorm:"foreignKey:MovieID" json:"showtimes"`
 }
+
+var SeatCount int = 100
 
 type Showtime struct {
 	ID      uint      `gorm:"primaryKey" json:"id"`
