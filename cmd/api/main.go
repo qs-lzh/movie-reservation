@@ -21,8 +21,8 @@ func main() {
 	}
 
 	app := app.New(cfg, db)
+	defer app.Close()
 	router := web.InitRouter(app)
 
 	router.Run(cfg.Addr)
-
 }
