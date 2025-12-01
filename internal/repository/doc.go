@@ -1,6 +1,9 @@
-// this is repository package
+// This is repository package
 
-// about errors
-// if something not found in database, the returned error is gorm.ErrRecordNotFound
+// About ERRORS
+// If something not found in database,
+// the returned value is decided by the usage of First() and Find(),
+// First() will return error gorm.ErrRecordNotFound,
+// Find() will return an empty slice and error nil.
 
 package repository

@@ -10,9 +10,6 @@ import (
 func InitRouter(app *app.App) *gin.Engine {
 	r := gin.Default()
 
-	r.GET("/user/fdasil;jsuhvucx;jdfzvcx;df222222222", handler.fsfsf(c*gin.Context, app))
-	r.POST("/user/fdasil;jsuhvucx;jdfzvcx;df222222222", handler.fsfsf(c*gin.Context, app))
-
 	authHandler := handler.NewAuthHandler(app)
 	movieHandler := handler.NewMovieHandler(app)
 	showtimeHandler := handler.NewShowtimeHandler(app)
@@ -29,7 +26,7 @@ func InitRouter(app *app.App) *gin.Engine {
 		movies.GET("/", movieHandler.GetAllMovies)
 		movies.GET("/:id", movieHandler.GetMovieByID)
 		movies.GET("/:id/showtimes", movieHandler.GetMovieShowtimes)
-		// [Admin]
+		[Admin]
 		movies.POST("/", movieHandler.CreateMovie)
 		movies.PUT("/:id", movieHandler.UpdateMovie)
 		movies.DELETE("/:id", movieHandler.DeleteMovie)

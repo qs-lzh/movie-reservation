@@ -33,7 +33,6 @@ func NewReservationService(db *gorm.DB) *reservationService {
 	}
 }
 
-// NOTE  logic wrong!
 func (s *reservationService) Reserve(userID uint, showtimeID uint) error {
 	// check if showtime exists
 	_, err := s.showtimeRepo.GetByID(showtimeID)
@@ -55,6 +54,9 @@ func (s *reservationService) Reserve(userID uint, showtimeID uint) error {
 
 	// check if the user already have the same reservation
 	reservations, err := s.repo.GetByUserID(userID)
+	if err != nil {
+		return err
+	}
 	for _, reservation := range reservations {
 		if reservation.ShowtimeID == showtimeID {
 			return ErrAlreadyReserved
