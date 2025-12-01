@@ -13,6 +13,8 @@ type ReservationService interface {
 	Reserve(userID uint, showtimeID uint) error
 	CancelReservation(reservationID uint) error
 	GetRemainingTickets(showtimeID uint) (int, error)
+	GetReservationsByUserID(userID uint) ([]model.Reservation, error)
+	GetReservationByID(reservationID uint) (*model.Reservation, error)
 }
 
 type reservationService struct {
@@ -83,10 +85,28 @@ func (s *reservationService) CancelReservation(reservationID uint) error {
 func (s *reservationService) GetRemainingTickets(showtimeID uint) (int, error) {
 	reservations, err := s.repo.GetByShowtimeID(showtimeID)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
-			return model.SeatCount, nil
-		}
+		// gorm.Find returns nil error for no records, so this is a real error
 		return 0, err
 	}
 	return model.SeatCount - len(reservations), nil
+}
+
+func (s *reservationService) GetReservationsByUserID(userID uint) ([]model.Reservation, error) {
+	reservations, err := s.repo.GetByUserID(userID)
+	if err != nil {
+		// gorm.Find returns nil error for no records, so this is a real error
+		return nil, err
+	}
+	return reservations, nil
+}
+
+func (s *reservationService) GetReservationByID(reservationID uint) (*model.Reservation, error) {
+	reservation, err := s.repo.GetByID(reservationID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return reservation, nil
 }

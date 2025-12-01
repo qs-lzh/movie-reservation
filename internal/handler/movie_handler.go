@@ -46,7 +46,7 @@ func (h *MovieHandler) GetMovieByID(ctx *gin.Context) {
 			dto.NotFound(ctx, "Movie not exists")
 			return
 		}
-		dto.InternalServerError(ctx, "failed to get movie")
+		dto.InternalServerError(ctx, "Failed to get movie")
 		return
 	}
 	dto.Success(ctx, http.StatusOK, movie)
@@ -61,7 +61,7 @@ func (h *MovieHandler) GetMovieShowtimes(ctx *gin.Context) {
 	}
 	showtimes, err := h.App.ShowtimeService.GetShowtimesByMovieID(uint(movieID))
 	if err != nil {
-		dto.InternalServerError(ctx, "failed to get showtimes")
+		dto.InternalServerError(ctx, "Failed to get showtimes")
 		return
 	}
 	dto.Success(ctx, http.StatusOK, showtimes)
