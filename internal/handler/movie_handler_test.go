@@ -58,7 +58,15 @@ func (m *mockShowtimeService) DeleteShowtimeByID(showtimeID uint) error {
 	return nil
 }
 func (m *mockShowtimeService) GetShowtimeByID(showtimeID uint) (*model.Showtime, error) {
-	return nil, nil
+	if m.err != nil {
+		return nil, m.err
+	}
+	for _, showtime := range m.showtimes {
+		if showtime.ID == showtimeID {
+			return &showtime, nil
+		}
+	}
+	return nil, service.ErrNotFound
 }
 func (m *mockShowtimeService) GetShowtimesByMovieID(movieID uint) ([]model.Showtime, error) {
 	if m.err != nil {
@@ -220,7 +228,7 @@ func TestGetMovieShowtimes(t *testing.T) {
 		require.Contains(t, w.Body.String(), `"success":true`)
 		// Instead of require.Len, we'll check for specific content indicating two showtimes.
 		require.Contains(t, w.Body.String(), `[{"id":1`) // Check for start of first showtime
-		require.Contains(t, w.Body.String(), `{"id":2`) // Check for start of second showtime
+		require.Contains(t, w.Body.String(), `{"id":2`)  // Check for start of second showtime
 	})
 
 	t.Run("no showtimes for movie", func(t *testing.T) {
@@ -276,3 +284,4 @@ func TestGetMovieShowtimes(t *testing.T) {
 		require.Contains(t, w.Body.String(), "INTERNAL_SERVER_ERROR")
 	})
 }
+

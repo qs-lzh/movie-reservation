@@ -20,6 +20,7 @@ type mockReservationService struct {
 	service.ReservationService
 	reservations []model.Reservation
 	err          error
+	remainingTickets int // Added this field
 }
 
 func (m *mockReservationService) Reserve(userID uint, showtimeID uint) error {
@@ -52,7 +53,23 @@ func (m *mockReservationService) GetReservationByID(reservationID uint) (*model.
 }
 
 func (m *mockReservationService) CancelReservation(reservationID uint) error {
-	return m.err
+	if m.err != nil {
+		return m.err
+	}
+	for i, r := range m.reservations {
+		if r.ID == reservationID {
+			m.reservations = append(m.reservations[:i], m.reservations[i+1:]...)
+			return nil
+		}
+	}
+	return service.ErrNotFound // Simulate not found if not in mock list
+}
+
+func (m *mockReservationService) GetRemainingTickets(showtimeID uint) (int, error) {
+	if m.err != nil {
+		return 0, m.err
+	}
+	return m.remainingTickets, nil
 }
 
 func setupReservationRouter(mockService service.ReservationService) *gin.Engine {

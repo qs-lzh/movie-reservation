@@ -103,6 +103,38 @@ func TestReservationService(t *testing.T) {
 	err = svc.CancelReservation(999)
 	require.ErrorIs(t, err, service.ErrNotFound)
 
+	// Test GetReservationsByUserID
+	reservations, err := svc.GetReservationsByUserID(user.ID)
+	require.NoError(t, err)
+	// after cancellation, there should be no reservations for this user
+	require.Equal(t, 0, len(reservations))
+
+	// re-reserve to test GetReservationByID and GetReservationsByUserID
+	err = svc.Reserve(user.ID, showtime.ID)
+	require.NoError(t, err)
+
+	reservations, err = svc.GetReservationsByUserID(user.ID)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(reservations))
+	require.Equal(t, user.ID, reservations[0].UserID)
+	require.Equal(t, showtime.ID, reservations[0].ShowtimeID)
+
+	// Test GetReservationByID
+	fetchedReservation, err := svc.GetReservationByID(reservations[0].ID)
+	require.NoError(t, err)
+	require.Equal(t, reservations[0].ID, fetchedReservation.ID)
+
+	// Test GetReservationByID with non-existent ID
+	_, err = svc.GetReservationByID(999)
+	require.ErrorIs(t, err, service.ErrNotFound)
+
+	// Test GetReservationsByUserID for a user with no reservations
+	anotherUserWithoutReservation := &model.User{ID: 102, Name: "anotheruser2"}
+	db.Create(anotherUserWithoutReservation)
+	reservations, err = svc.GetReservationsByUserID(anotherUserWithoutReservation.ID)
+	require.NoError(t, err)
+	require.Equal(t, 0, len(reservations))
+
 	db.Migrator().DropTable(
 		&model.Movie{},
 		&model.Showtime{},
