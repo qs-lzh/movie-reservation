@@ -13,6 +13,7 @@ type UserService interface {
 	CreateUser(userName string, password string) error
 	DeleteUser(userName string, password string) error
 	ValidateUser(userName string, password string) (bool, error)
+	GetUserRoleByName(userName string) (model.UserRole, error)
 }
 
 type userService struct {
@@ -75,4 +76,14 @@ func (s *userService) ValidateUser(userName string, password string) (bool, erro
 		return false, nil
 	}
 	return true, nil
+}
+func (s *userService) GetUserRoleByName(userName string) (model.UserRole, error) {
+	user, err := s.repo.GetByName(userName)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", ErrNotFound
+		}
+		return "", err
+	}
+	return user.Role, nil
 }

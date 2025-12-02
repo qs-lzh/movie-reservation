@@ -10,17 +10,17 @@ import (
 func InitRouter(app *app.App) *gin.Engine {
 	r := gin.Default()
 
-	// authHandler := handler.NewAuthHandler(app)
+	authHandler := handler.NewAuthHandler(app)
 	movieHandler := handler.NewMovieHandler(app)
 	showtimeHandler := handler.NewShowtimeHandler(app)
 	reservationHandler := handler.NewReservationHandler(app)
 
-	// auth := r.Group("/auth")
-	// {
-	// 	// [User] [Admin]
-	// 	auth.POST("/register", authHandler.Register)
-	// 	auth.POST("/login", authHandler.Login)
-	// }
+	auth := r.Group("/auth")
+	{
+		// [User] [Admin]
+		auth.POST("/register", authHandler.Register)
+		auth.POST("/login", authHandler.Login)
+	}
 
 	movies := r.Group("movies")
 	{

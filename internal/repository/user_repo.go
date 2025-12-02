@@ -25,6 +25,7 @@ func NewUserRepoGorm(db *gorm.DB) *userRepoGorm {
 	}
 }
 
+// default value of user.Role is 'user'
 func (r *userRepoGorm) Create(user *model.User) error {
 	ctx := context.Background()
 	if err := gorm.G[model.User](r.db).Create(ctx, user); err != nil {

@@ -20,9 +20,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open gorm.DB: %v", err)
 	}
-	// sqlDB, err := db.DB()
-	// if err != nil {}
-	// }
 
 	initDB(db)
 
@@ -34,13 +31,10 @@ func main() {
 }
 
 func initDB(db *gorm.DB) {
-	err := db.Migrator().AutoMigrate(
+	db.Migrator().AutoMigrate(
 		&model.User{},
 		&model.Movie{},
 		&model.Showtime{},
 		&model.Reservation{},
 	)
-	if err != nil {
-		log.Fatalf("failed to auto migrate: %v", err)
-	}
 }
