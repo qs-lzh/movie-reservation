@@ -3,10 +3,11 @@ package service
 import (
 	"errors"
 
+	"gorm.io/gorm"
+
 	"github.com/qs-lzh/movie-reservation/internal/model"
 	"github.com/qs-lzh/movie-reservation/internal/repository"
 	"github.com/qs-lzh/movie-reservation/internal/security"
-	"gorm.io/gorm"
 )
 
 type UserService interface {

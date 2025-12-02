@@ -5,15 +5,18 @@ import (
 
 	"github.com/qs-lzh/movie-reservation/internal/app"
 	"github.com/qs-lzh/movie-reservation/internal/handler"
+	"github.com/qs-lzh/movie-reservation/internal/middleware"
 )
 
 func InitRouter(app *app.App) *gin.Engine {
-	r := gin.Default()
-
 	authHandler := handler.NewAuthHandler(app)
 	movieHandler := handler.NewMovieHandler(app)
 	showtimeHandler := handler.NewShowtimeHandler(app)
 	reservationHandler := handler.NewReservationHandler(app)
+
+	r := gin.Default()
+	// r.Use(gin.Logger())
+	// r.Use(gin.Recovery())
 
 	auth := r.Group("/auth")
 	{
@@ -23,6 +26,7 @@ func InitRouter(app *app.App) *gin.Engine {
 	}
 
 	movies := r.Group("movies")
+	movies.Use(middleware.RequireAuth())
 	{
 		// [User] [Admin]
 		movies.GET("/", movieHandler.GetAllMovies)
@@ -35,6 +39,7 @@ func InitRouter(app *app.App) *gin.Engine {
 	}
 
 	showtimes := r.Group("showtimes")
+	showtimes.Use(middleware.RequireAuth())
 	{
 		showtimes.GET("/:id", showtimeHandler.GetShowtimeByID)
 		showtimes.GET("/:id/availability", showtimeHandler.GetShowtimeAvailability)
@@ -45,6 +50,7 @@ func InitRouter(app *app.App) *gin.Engine {
 	}
 
 	reservations := r.Group("reservations")
+	reservations.Use(middleware.RequireAuth())
 	{
 		// [User]
 		reservations.POST("/", reservationHandler.CreateReservation)

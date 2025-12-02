@@ -9,7 +9,7 @@ import (
 
 	"github.com/qs-lzh/movie-reservation/internal/app"
 	"github.com/qs-lzh/movie-reservation/internal/dto"
-	"github.com/qs-lzh/movie-reservation/internal/model"
+	"github.com/qs-lzh/movie-reservation/internal/security"
 	"github.com/qs-lzh/movie-reservation/internal/service"
 )
 
@@ -44,7 +44,7 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	dto.Success(ctx, http.StatusOK, fmt.Sprintf("Created user named %s successfully", req.UserName))
+	dto.Success(ctx, 201, fmt.Sprintf("Created user named %s successfully", req.UserName))
 }
 
 type LoginRequest struct {
@@ -53,7 +53,7 @@ type LoginRequest struct {
 }
 
 func (h *AuthHandler) Login(ctx *gin.Context) {
-	var req RegisterRequest
+	var req LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		dto.BadRequest(ctx, "Invalid request body")
 		return
@@ -69,11 +69,15 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	标记为已登录
+	tokenString, err := security.CreateToken(req.UserName)
+	if err != nil {
+		dto.InternalServerError(ctx, "Failed to create token")
+		return
+	}
+	// change the parameter secure to true when deploy
+	ctx.SetCookie("jwt", tokenString, 3600, "/", "", false, true)
 
-}
-
-func (h *AuthHandler) Logout(ctx *gin.Context) {
-
-	直接标记为未登录吗
+	dto.Success(ctx, http.StatusOK, gin.H{
+		"status": "Login successfully",
+	})
 }
