@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -38,9 +39,21 @@ func (m *mockMovieService) GetMovieByID(id uint) (*model.Movie, error) {
 	return nil, service.ErrNotFound
 }
 
-func (m *mockMovieService) CreateMovie(*model.Movie) error { return nil }
-func (m *mockMovieService) UpdateMovie(*model.Movie) error { return nil }
-func (m *mockMovieService) DeleteMovieByID(uint) error     { return nil }
+func (m *mockMovieService) CreateMovie(*model.Movie) error { return m.err }
+func (m *mockMovieService) UpdateMovie(*model.Movie) error { return m.err }
+func (m *mockMovieService) DeleteMovieByID(id uint) error {
+	if m.err != nil {
+		return m.err
+	}
+	// Check if the movie exists before deletion
+	for _, movie := range m.movies {
+		if movie.ID == id {
+			return nil // Movie exists, deletion can proceed
+		}
+	}
+	// Movie doesn't exist, return not found error (when there's no general error set)
+	return service.ErrNotFound
+}
 
 // mockShowtimeService implements service.ShowtimeService
 type mockShowtimeService struct {
@@ -285,3 +298,261 @@ func TestGetMovieShowtimes(t *testing.T) {
 	})
 }
 
+func TestCreateMovie(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("success", func(t *testing.T) {
+		mock := &mockMovieService{}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.POST("/movies", h.CreateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{"title": "Inception", "description": "A movie about dreams"}`
+		req, _ := http.NewRequest("POST", "/movies", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 201, w.Code)
+		require.Contains(t, w.Body.String(), "Inception")
+		require.Contains(t, w.Body.String(), `"success":true`)
+	})
+
+	t.Run("missing required title", func(t *testing.T) {
+		mock := &mockMovieService{}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.POST("/movies", h.CreateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{"description": "A movie without title"}`
+		req, _ := http.NewRequest("POST", "/movies", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 400, w.Code)
+		require.Contains(t, w.Body.String(), "Invalid request body")
+		require.Contains(t, w.Body.String(), "BAD_REQUEST")
+	})
+
+	t.Run("invalid json", func(t *testing.T) {
+		mock := &mockMovieService{}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.POST("/movies", h.CreateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{invalid json}`
+		req, _ := http.NewRequest("POST", "/movies", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 400, w.Code)
+		require.Contains(t, w.Body.String(), "Invalid request body")
+		require.Contains(t, w.Body.String(), "BAD_REQUEST")
+	})
+
+	t.Run("service error", func(t *testing.T) {
+		mock := &mockMovieService{
+			err: errors.New("database error"),
+		}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.POST("/movies", h.CreateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{"title": "Interstellar", "description": "Space movie"}`
+		req, _ := http.NewRequest("POST", "/movies", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 500, w.Code)
+		require.Contains(t, w.Body.String(), "INTERNAL_SERVER_ERROR")
+		require.Contains(t, w.Body.String(), `"success":false`)
+	})
+}
+
+func TestUpdateMovie(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("success", func(t *testing.T) {
+		mock := &mockMovieService{
+			movies: []model.Movie{
+				{ID: 1, Title: "The Matrix", Description: "Original Description"},
+			},
+		}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.PUT("/movies/:id", h.UpdateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{"title": "The Matrix Reloaded", "description": "Updated Description"}`
+		req, _ := http.NewRequest("PUT", "/movies/1", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 200, w.Code)
+		require.Contains(t, w.Body.String(), "The Matrix Reloaded")
+		require.Contains(t, w.Body.String(), "Updated Description")
+		require.Contains(t, w.Body.String(), `"success":true`)
+	})
+
+	t.Run("invalid id", func(t *testing.T) {
+		mock := &mockMovieService{}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.PUT("/movies/:id", h.UpdateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{"title": "New Title"}`
+		req, _ := http.NewRequest("PUT", "/movies/abc", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 400, w.Code)
+		require.Contains(t, w.Body.String(), "Invalid movie id")
+		require.Contains(t, w.Body.String(), "BAD_REQUEST")
+	})
+
+	t.Run("movie not found", func(t *testing.T) {
+		mock := &mockMovieService{
+			movies: []model.Movie{{ID: 1, Title: "Existing Movie"}},
+		}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.PUT("/movies/:id", h.UpdateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{"title": "New Title"}`
+		req, _ := http.NewRequest("PUT", "/movies/999", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 404, w.Code)
+		require.Contains(t, w.Body.String(), "Movie not exists")
+		require.Contains(t, w.Body.String(), "NOT_FOUND")
+	})
+
+	t.Run("invalid json", func(t *testing.T) {
+		mock := &mockMovieService{
+			movies: []model.Movie{{ID: 1, Title: "Existing Movie"}},
+		}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.PUT("/movies/:id", h.UpdateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{invalid json}`
+		req, _ := http.NewRequest("PUT", "/movies/1", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 400, w.Code)
+		require.Contains(t, w.Body.String(), "Invalid request body")
+		require.Contains(t, w.Body.String(), "BAD_REQUEST")
+	})
+
+	t.Run("service error", func(t *testing.T) {
+		mock := &mockMovieService{
+			err: errors.New("database error"),
+		}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.PUT("/movies/:id", h.UpdateMovie)
+
+		w := httptest.NewRecorder()
+		jsonData := `{"title": "Updated Title"}`
+		req, _ := http.NewRequest("PUT", "/movies/1", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 500, w.Code)
+		require.Contains(t, w.Body.String(), "INTERNAL_SERVER_ERROR")
+		require.Contains(t, w.Body.String(), `"success":false`)
+	})
+}
+
+func TestDeleteMovie(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("success", func(t *testing.T) {
+		mock := &mockMovieService{
+			movies: []model.Movie{
+				{ID: 1, Title: "The Matrix", Description: "A great movie"},
+			},
+		}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.DELETE("/movies/:id", h.DeleteMovie)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/movies/1", nil)
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 200, w.Code)
+		require.Contains(t, w.Body.String(), "Movie deleted successfully")
+		require.Contains(t, w.Body.String(), `"success":true`)
+	})
+
+	t.Run("invalid id", func(t *testing.T) {
+		mock := &mockMovieService{}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.DELETE("/movies/:id", h.DeleteMovie)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/movies/abc", nil)
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 400, w.Code)
+		require.Contains(t, w.Body.String(), "Invalid movie id")
+		require.Contains(t, w.Body.String(), "BAD_REQUEST")
+	})
+
+	t.Run("movie not found", func(t *testing.T) {
+		mock := &mockMovieService{
+			movies: []model.Movie{{ID: 1, Title: "Existing Movie"}},
+		}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.DELETE("/movies/:id", h.DeleteMovie)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/movies/999", nil)
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 404, w.Code)
+		require.Contains(t, w.Body.String(), "Movie not exists")
+		require.Contains(t, w.Body.String(), "NOT_FOUND")
+	})
+
+	t.Run("service error", func(t *testing.T) {
+		mock := &mockMovieService{
+			err: errors.New("database error"),
+		}
+		h := handler.NewMovieHandler(&app.App{MovieService: mock})
+
+		router := gin.New()
+		router.DELETE("/movies/:id", h.DeleteMovie)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("DELETE", "/movies/1", nil)
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 500, w.Code)
+		require.Contains(t, w.Body.String(), "INTERNAL_SERVER_ERROR")
+		require.Contains(t, w.Body.String(), `"success":false`)
+	})
+}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/qs-lzh/movie-reservation/internal/app"
 	"github.com/qs-lzh/movie-reservation/internal/dto"
+	"github.com/qs-lzh/movie-reservation/internal/model"
 	"github.com/qs-lzh/movie-reservation/internal/service"
 )
 
@@ -65,4 +66,96 @@ func (h *MovieHandler) GetMovieShowtimes(ctx *gin.Context) {
 		return
 	}
 	dto.Success(ctx, http.StatusOK, showtimes)
+}
+
+type CreateMovieRequest struct {
+	Title       string `json:"title" binding:"required"`
+	Description string `json:"description"`
+}
+
+// @route POST /movies
+func (h *MovieHandler) CreateMovie(ctx *gin.Context) {
+	var req CreateMovieRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		dto.BadRequest(ctx, "Invalid request body")
+		return
+	}
+
+	movie := &model.Movie{
+		Title:       req.Title,
+		Description: req.Description,
+	}
+
+	err := h.App.MovieService.CreateMovie(movie)
+	if err != nil {
+		dto.InternalServerError(ctx, "Failed to create movie")
+		return
+	}
+
+	dto.Success(ctx, http.StatusCreated, movie)
+}
+
+type UpdateMovieRequest struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
+// @route PUT /movies/:id
+func (h *MovieHandler) UpdateMovie(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		dto.BadRequest(ctx, "Invalid movie id")
+		return
+	}
+
+	var req UpdateMovieRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		dto.BadRequest(ctx, "Invalid request body")
+		return
+	}
+
+	// check if the movie exists
+	existingMovie, err := h.App.MovieService.GetMovieByID(uint(id))
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			dto.NotFound(ctx, "Movie not exists")
+			return
+		}
+		dto.InternalServerError(ctx, "Failed to get movie")
+		return
+	}
+
+	existingMovie.Title = req.Title
+	existingMovie.Description = req.Description
+
+	err = h.App.MovieService.UpdateMovie(existingMovie)
+	if err != nil {
+		dto.InternalServerError(ctx, "Failed to update movie")
+		return
+	}
+
+	dto.Success(ctx, http.StatusOK, existingMovie)
+}
+
+// @route DELETE /movies/:id
+func (h *MovieHandler) DeleteMovie(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		dto.BadRequest(ctx, "Invalid movie id")
+		return
+	}
+
+	err = h.App.MovieService.DeleteMovieByID(uint(id))
+	if err != nil {
+		if errors.Is(err, service.ErrNotFound) {
+			dto.NotFound(ctx, "Movie not exists")
+			return
+		}
+		dto.InternalServerError(ctx, "Failed to delete movie")
+		return
+	}
+
+	dto.SuccessWithMessage(ctx, http.StatusOK, nil, "Movie deleted successfully")
 }
