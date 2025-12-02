@@ -1,15 +1,11 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/qs-lzh/movie-reservation/internal/security"
 )
 
 type AuthService interface {
 	Login(username, password string) (token string, err error)
-	Logout(token string) error
-	RefreshToken(oldToken string) (newToken string, err error)
 	ValidateToken(token string) (err error)
 }
 
@@ -17,6 +13,8 @@ type AuthService interface {
 type jwtAuthService struct {
 	userService UserService
 }
+
+var _ AuthService = (*jwtAuthService)(nil)
 
 func NewJWTAuthService(userService UserService) *jwtAuthService {
 	return &jwtAuthService{
@@ -33,10 +31,6 @@ func (s *jwtAuthService) Login(username, password string) (token string, err err
 		return "", nil
 	}
 	return security.CreateToken(username)
-}
-
-func (s *jwtAuthService) RefreshToken(oldToken string) (newToken string, err error) {
-
 }
 
 func (s *jwtAuthService) ValidateToken(token string) error {
