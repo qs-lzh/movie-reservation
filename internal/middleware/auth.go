@@ -12,7 +12,7 @@ func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr, err := c.Cookie("jwt")
 		if err != nil {
-			dto.Unauthorized(c, "Failed to get jwt toke from cookie")
+			dto.Unauthorized(c, "Failed to get jwt token from cookie")
 			return
 		}
 		if err := security.VerifyToken(tokenStr); err != nil {

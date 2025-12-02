@@ -78,6 +78,7 @@ func (s *userService) ValidateUser(userName string, password string) (bool, erro
 	}
 	return true, nil
 }
+
 func (s *userService) GetUserRoleByName(userName string) (model.UserRole, error) {
 	user, err := s.repo.GetByName(userName)
 	if err != nil {
