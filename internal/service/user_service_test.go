@@ -40,7 +40,7 @@ func TestUserService(t *testing.T) {
 	password := "password123"
 
 	// test CreateUser
-	err = userService.CreateUser(userName, password)
+	err = userService.CreateUser(userName, password, model.RoleUser)
 	require.NoError(t, err)
 
 	// verify user exists in DB

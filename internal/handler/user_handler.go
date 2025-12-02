@@ -36,7 +36,7 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.App.UserService.CreateUser(req.UserName, req.Password); err != nil {
+	if err := h.App.UserService.CreateUser(req.UserName, req.Password, req.Role); err != nil {
 		if errors.Is(err, service.ErrAlreadyExists) {
 			dto.Conflict(ctx, "USER_CONFLICTS", fmt.Sprintf("User named %s already exists", req.UserName))
 			return

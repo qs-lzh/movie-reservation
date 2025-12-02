@@ -47,11 +47,15 @@ func TestAuthService(t *testing.T) {
 
 	
 
-		// create a user
+				// create a user
 
-		err = userService.CreateUser(userName, password)
+	
 
-		require.NoError(t, err)
+				err = userService.CreateUser(userName, password, model.RoleUser)
+
+	
+
+				require.NoError(t, err)
 
 	
 

@@ -23,7 +23,7 @@ type mockUserService struct {
 	getUserRoleFn  func(username string) (model.UserRole, error)
 }
 
-func (m *mockUserService) CreateUser(username, password string) error {
+func (m *mockUserService) CreateUser(username, password string, role model.UserRole) error {
 	return m.createUserErr
 }
 
@@ -71,12 +71,13 @@ func TestRegister(t *testing.T) {
 		router.POST("/register", h.Register)
 
 		w := httptest.NewRecorder()
-		jsonData := `{"username": "testuser", "password": "password"}`
-		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
-		req.Header.Set("Content-Type", "application/json")
-		router.ServeHTTP(w, req)
-
-		require.Equal(t, http.StatusCreated, w.Code)
+		        		jsonData := `{"username": "testuser", "password": "password", "user_role": "user"}`
+		        		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
+		        
+		        req.Header.Set("Content-Type", "application/json")
+		        router.ServeHTTP(w, req)
+		
+		        require.Equal(t, http.StatusCreated, w.Code)
 		require.Contains(t, w.Body.String(), `"success":true`)
 		require.Contains(t, w.Body.String(), `Created user named testuser successfully`)
 	})
@@ -109,7 +110,7 @@ func TestRegister(t *testing.T) {
 		router.POST("/register", h.Register)
 
 		w := httptest.NewRecorder()
-		jsonData := `{"username": "existinguser", "password": "password"}`
+		jsonData := `{"username": "existinguser", "password": "password", "user_role": "user"}`
 		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
 		req.Header.Set("Content-Type", "application/json")
 		router.ServeHTTP(w, req)
@@ -127,12 +128,12 @@ func TestRegister(t *testing.T) {
 		h := handler.NewAuthHandler(&app.App{UserService: mockUserService})
 
 		router := gin.New()
-		router.POST("/register", h.Register)
-
-		w := httptest.NewRecorder()
-		jsonData := `{"username": "testuser", "password": "password"}`
-		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
-		req.Header.Set("Content-Type", "application/json")
+		        router.POST("/register", h.Register)
+		
+		        w := httptest.NewRecorder()
+		        		jsonData := `{"username": "testuser", "password": "password", "user_role": "user"}`
+		        		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
+		        		req.Header.Set("Content-Type", "application/json")
 		router.ServeHTTP(w, req)
 
 		require.Equal(t, http.StatusInternalServerError, w.Code)
