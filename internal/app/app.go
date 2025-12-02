@@ -1,7 +1,6 @@
 package app
 
 import (
-	"os/user"
 
 	"gorm.io/gorm"
 
