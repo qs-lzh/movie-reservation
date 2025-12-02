@@ -6,6 +6,7 @@ import (
 	"github.com/qs-lzh/movie-reservation/config"
 	"github.com/qs-lzh/movie-reservation/interfaces/web"
 	"github.com/qs-lzh/movie-reservation/internal/app"
+	"github.com/qs-lzh/movie-reservation/internal/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -19,10 +20,27 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open gorm.DB: %v", err)
 	}
+	// sqlDB, err := db.DB()
+	// if err != nil {}
+	// }
+
+	initDB(db)
 
 	app := app.New(cfg, db)
 	defer app.Close()
 	router := web.InitRouter(app)
 
 	router.Run(cfg.Addr)
+}
+
+func initDB(db *gorm.DB) {
+	err := db.Migrator().AutoMigrate(
+		&model.User{},
+		&model.Movie{},
+		&model.Showtime{},
+		&model.Reservation{},
+	)
+	if err != nil {
+		log.Fatalf("failed to auto migrate: %v", err)
+	}
 }
