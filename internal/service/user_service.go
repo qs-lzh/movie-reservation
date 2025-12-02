@@ -11,7 +11,7 @@ import (
 )
 
 type UserService interface {
-	CreateUser(userName string, password string) error
+	CreateUser(userName, password string, role model.UserRole) error
 	DeleteUser(userName string, password string) error
 	ValidateUser(userName string, password string) (bool, error)
 	GetUserRoleByName(userName string) (model.UserRole, error)
@@ -33,7 +33,7 @@ func NewUserService(db *gorm.DB) *userService {
 	}
 }
 
-func (s *userService) CreateUser(userName string, password string) error {
+func (s *userService) CreateUser(userName, password string, role model.UserRole) error {
 	_, err := s.repo.GetByName(userName)
 	if err == nil {
 		return ErrAlreadyExists
@@ -48,6 +48,7 @@ func (s *userService) CreateUser(userName string, password string) error {
 	return s.repo.Create(&model.User{
 		Name:           userName,
 		HashedPassword: hash,
+		Role:           role,
 	})
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/qs-lzh/movie-reservation/internal/app"
 	"github.com/qs-lzh/movie-reservation/internal/dto"
+	"github.com/qs-lzh/movie-reservation/internal/model"
 	"github.com/qs-lzh/movie-reservation/internal/service"
 )
 
@@ -23,8 +24,9 @@ func NewAuthHandler(app *app.App) *AuthHandler {
 }
 
 type RegisterRequest struct {
-	UserName string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	UserName string         `json:"username" binding:"required"`
+	Password string         `json:"password" binding:"required"`
+	Role     model.UserRole `json:"user_role" binding:"required"`
 }
 
 func (h *AuthHandler) Register(ctx *gin.Context) {

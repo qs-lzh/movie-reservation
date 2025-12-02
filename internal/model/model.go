@@ -8,8 +8,15 @@ type User struct {
 	ID             uint     `gorm:"primaryKey" json:"id"`
 	Name           string   `gorm:"not null;unique" json:"name"`
 	HashedPassword string   `gorm:"not null" json:"hashed_password"`
-	Role           UserRole `gorm:"default'user';not null" json:"role"`
+	Role           UserRole `gorm:"not null";not null" json:"role"`
 }
+
+type UserRole string
+
+const (
+	RoleUser  UserRole = "user"
+	RoleAdmin UserRole = "admin"
+)
 
 type Movie struct {
 	ID          uint       `gorm:"primaryKey" json:"id"`
@@ -32,10 +39,3 @@ type Reservation struct {
 	ShowtimeID uint `gorm:"not null" json:"showtime_id"`
 	UserID     uint `gorm:"not null" json:"user_id"`
 }
-
-type UserRole string
-
-const (
-	RoleUser  UserRole = "user"
-	RoleAdmin UserRole = "admin"
-)
