@@ -1,6 +1,8 @@
 package app
 
 import (
+	"os/user"
+
 	"gorm.io/gorm"
 
 	"github.com/qs-lzh/movie-reservation/config"
@@ -16,16 +18,19 @@ type App struct {
 	MovieService       service.MovieService
 	ShowtimeService    service.ShowtimeService
 	ReservationService service.ReservationService
+	AuthService        service.AuthService
 }
 
 func New(config *config.Config, db *gorm.DB) *App {
+	userService := service.NewUserService(db)
 	return &App{
 		Config:             config,
 		DB:                 db,
-		UserService:        service.NewUserService(db),
+		UserService:        userService,
 		MovieService:       service.NewMovieService(db),
 		ShowtimeService:    service.NewShowtimeService(db),
 		ReservationService: service.NewReservationService(db),
+		AuthService:        service.NewJWTAuthService(userService),
 	}
 }
 

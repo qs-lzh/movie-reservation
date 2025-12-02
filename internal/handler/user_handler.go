@@ -9,7 +9,6 @@ import (
 
 	"github.com/qs-lzh/movie-reservation/internal/app"
 	"github.com/qs-lzh/movie-reservation/internal/dto"
-	"github.com/qs-lzh/movie-reservation/internal/security"
 	"github.com/qs-lzh/movie-reservation/internal/service"
 )
 
@@ -59,25 +58,19 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	isValid, err := h.App.UserService.ValidateUser(req.UserName, req.Password)
-	if !isValid {
-		if err != nil {
-			dto.InternalServerError(ctx, "Failed to validate user")
-			return
-		}
-		dto.Unauthorized(ctx, "Password wrong or username doesn't not exist")
-		return
-	}
-
-	tokenString, err := security.CreateToken(req.UserName)
+	tokenStr, err := h.App.AuthService.Login(req.UserName, req.Password)
 	if err != nil {
-		dto.InternalServerError(ctx, "Failed to create token")
-		return
+		dto.InternalServerError(ctx, "Failed to login")
 	}
 	// change the parameter secure to true when deploy
-	ctx.SetCookie("jwt", tokenString, 3600, "/", "", false, true)
+	ctx.SetCookie("jwt", tokenStr, 3600, "/", "", false, true)
 
 	dto.Success(ctx, http.StatusOK, gin.H{
 		"status": "Login successfully",
 	})
+}
+
+func (h *AuthHandler) Logout(ctx *gin.Context) {
+	ctx.SetCookie("jwt", "", -1, "/", "", false, true)
+	dto.Success(ctx, http.StatusOK, "Logged out successfully")
 }
