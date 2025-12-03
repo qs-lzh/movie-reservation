@@ -1,12 +1,14 @@
 package service
 
 import (
+	"github.com/golang-jwt/jwt/v5"
+
 	"github.com/qs-lzh/movie-reservation/internal/security"
 )
 
 type AuthService interface {
 	Login(username, password string) (token string, err error)
-	ValidateToken(token string) (err error)
+	ValidateToken(token string) (claims jwt.MapClaims, err error)
 }
 
 // jwtAuthService relies on UserService
@@ -30,9 +32,13 @@ func (s *jwtAuthService) Login(username, password string) (token string, err err
 		}
 		return "", nil
 	}
-	return security.CreateToken(username)
+	role, err := s.userService.GetUserRoleByName(username)
+	if err != nil {
+		return "", err
+	}
+	return security.CreateToken(username, role)
 }
 
-func (s *jwtAuthService) ValidateToken(token string) error {
+func (s *jwtAuthService) ValidateToken(token string) (claims jwt.MapClaims, err error) {
 	return security.VerifyToken(token)
 }

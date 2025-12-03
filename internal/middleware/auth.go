@@ -15,7 +15,8 @@ func RequireAuth() gin.HandlerFunc {
 			dto.Unauthorized(c, "Failed to get jwt token from cookie")
 			return
 		}
-		if err := security.VerifyToken(tokenStr); err != nil {
+		claims, err := security.VerifyToken(tokenStr)
+		if err != nil {
 			if errors.Is(err, security.ErrInvalidToken) {
 				dto.Unauthorized(c, "Invalid token")
 				return
@@ -23,6 +24,9 @@ func RequireAuth() gin.HandlerFunc {
 			dto.InternalServerError(c, "Failed to verify token")
 			return
 		}
+
+		// For RequireAdmin use
+		c.Set("claims", claims)
 
 		c.Next()
 	}
