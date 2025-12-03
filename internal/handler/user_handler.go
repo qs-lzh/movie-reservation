@@ -68,8 +68,17 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	// change the parameter secure to true when deploy
 	ctx.SetCookie("jwt", tokenStr, 3600, "/", "", false, true)
 
+	// Get user role to return in response
+	userRole, err := h.App.UserService.GetUserRoleByName(req.UserName)
+	if err != nil {
+		dto.InternalServerError(ctx, "Failed to get user role")
+		return
+	}
+
 	dto.Success(ctx, http.StatusOK, gin.H{
-		"status": "Login successfully",
+		"status":   "Login successfully",
+		"username": req.UserName,
+		"role":     userRole,
 	})
 }
 

@@ -23,6 +23,7 @@ func InitRouter(app *app.App) *gin.Engine {
 		// [User] [Admin]
 		users.POST("/register", authHandler.Register)
 		users.POST("/login", authHandler.Login)
+		users.POST("/logout", authHandler.Logout)
 	}
 
 	movies := r.Group("movies")
