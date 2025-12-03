@@ -42,6 +42,7 @@ func InitRouter(app *app.App) *gin.Engine {
 	showtimes := r.Group("showtimes")
 	showtimes.Use(middleware.RequireAuth())
 	{
+		showtimes.GET("/", showtimeHandler.ListAllShowtimes)
 		showtimes.GET("/:id", showtimeHandler.GetShowtimeByID)
 		showtimes.GET("/:id/availability", showtimeHandler.GetShowtimeAvailability)
 		// [Admin]

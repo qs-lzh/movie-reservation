@@ -29,6 +29,17 @@ type CreateShowtimeRequest struct {
 	HallID  uint      `json:"hall_id" binding:"required"`
 }
 
+// @route GET /showtimes/
+func (h *ShowtimeHandler) ListAllShowtimes(ctx *gin.Context) {
+	showtimes, err := h.App.ShowtimeService.GetAllShowtimes()
+	if err != nil {
+		dto.InternalServerError(ctx, "Failed to get showtimes")
+		return
+	}
+	dto.Success(ctx, 200, showtimes)
+
+}
+
 // @route POST /showtimes
 func (h *ShowtimeHandler) CreateShowtime(ctx *gin.Context) {
 	var req CreateShowtimeRequest

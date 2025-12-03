@@ -1,5 +1,11 @@
 <template>
   <div class="movie-detail-container">
+    <div class="back-button-container">
+      <el-button type="default" @click="goBack" :icon="Back">
+        Back to Movies
+      </el-button>
+    </div>
+
     <el-card v-if="movie" class="movie-card">
       <div class="movie-header">
         <div class="movie-poster-placeholder">
@@ -73,7 +79,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { movieAPI } from '@/api/movie'
 import { showtimeAPI } from '@/api/showtime'
 import { ElMessage } from 'element-plus'
-import { Film, Calendar, Clock, Location, Tickets } from '@element-plus/icons-vue'
+import { Film, Calendar, Clock, Location, Tickets, Back } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -149,6 +155,17 @@ const formatTime = (dateString) => {
   })
 }
 
+// 返回上一页
+const goBack = () => {
+  router.go(-1) // 返回浏览器历史中的上一页
+  // 如果浏览器历史中没有上一页，则导航到首页
+  // setTimeout(() => {
+  //   if (router.currentRoute.value.name === 'movie-detail') {
+  //     router.push('/')
+  //   }
+  // }, 100)
+}
+
 // 跳转到预订页面
 const goToReservation = (showtimeId) => {
   router.push({ name: 'seat-reservation', params: { id: showtimeId } })
@@ -164,6 +181,10 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.back-button-container {
+  margin-bottom: 20px;
 }
 
 .movie-card {

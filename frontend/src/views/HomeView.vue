@@ -15,6 +15,9 @@ const currentView = ref('movies') // 'movies' or 'showtimes'
 const router = useRouter()
 
 const fetchAllData = async () => {
+  let moviesError = null;
+  let showtimesError = null;
+
   try {
     // 并行获取电影和场次数据
     const [moviesResponse, showtimesResponse] = await Promise.allSettled([
@@ -27,13 +30,52 @@ const fetchAllData = async () => {
       filteredMovies.value = moviesResponse.value.data.data || []
     } else {
       console.error('Failed to fetch movies:', moviesResponse.reason)
+      moviesError = moviesResponse.reason;
     }
 
     if (showtimesResponse.status === 'fulfilled') {
       showtimes.value = showtimesResponse.value.data.data || []
+      // 为每个场次添加movie_title属性
+      for (const showtime of showtimes.value) {
+        if (!showtime.movie_title && showtime.movie_id) {
+          const movie = movies.value.find(m => m.id === showtime.movie_id)
+          if (movie) {
+            showtime.movie_title = movie.title
+          }
+        }
+      }
+      // 按时间排序场次，最早的在前
+      showtimes.value.sort((a, b) => new Date(a.start_at) - new Date(b.start_at))
     } else {
       console.error('Failed to fetch showtimes:', showtimesResponse.reason)
+      showtimesError = showtimesResponse.reason;
     }
+
+    // 确定总体错误状态
+    if (moviesError && showtimesError) {
+      // 两个请求都失败，检查是否有认证错误
+      if (moviesError?.response?.status === 401 || showtimesError?.response?.status === 401) {
+        error.value = 'Please login to view content.'
+      } else {
+        error.value = 'Failed to load movies and showtimes. Please try again later.'
+      }
+    } else if (moviesError) {
+      // 仅电影请求失败
+      if (moviesError?.response?.status === 401) {
+        error.value = 'Please login to view content.'
+      } else {
+        error.value = 'Failed to load movies. Please try again later.'
+      }
+    } else if (showtimesError) {
+      // 仅场次请求失败
+      if (showtimesError?.response?.status === 401) {
+        error.value = 'Please login to view content.'
+      } else {
+        error.value = 'Failed to load showtimes. Please try again later.'
+      }
+    }
+    // 如果都没有错误，继续正常显示
+
   } catch (err) {
     console.error('Error fetching data:', err)
     // 检查是否是认证错误
@@ -81,7 +123,19 @@ const switchView = (view) => {
 
 // 获取场次对应的电影标题
 const getShowtimeMovieTitle = (showtime) => {
-  return showtime.movie_title || `Movie ID: ${showtime.movie_id}` || 'Unknown Movie'
+  // 首先尝试从已获取的电影列表中找到标题
+  if (showtime.movie_title) {
+    return showtime.movie_title
+  } else if (showtime.movie_id) {
+    // 如果没有movie_title但有movie_id，尝试从本地电影列表查找
+    const movie = movies.value.find(m => m.id === showtime.movie_id)
+    if (movie && movie.title) {
+      return movie.title
+    }
+    // 如果仍然找不到，显示ID
+    return `Movie ID: ${showtime.movie_id}`
+  }
+  return 'Unknown Movie'
 }
 
 // 格式化日期
@@ -225,13 +279,6 @@ const getAvailabilityTagType = (availableTickets) => {
             </template>
           </el-table-column>
           <el-table-column prop="hall_id" label="Hall" width="100" />
-          <el-table-column label="Available Tickets" width="150">
-            <template #default="{ row }">
-              <el-tag :type="getAvailabilityTagType(row.available_tickets)">
-                {{ row.available_tickets }} / {{ row.capacity }}
-              </el-tag>
-            </template>
-          </el-table-column>
           <el-table-column label="Actions" width="150">
             <template #default="{ row }">
               <el-button

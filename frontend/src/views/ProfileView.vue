@@ -137,7 +137,7 @@ const cancelReservation = async (reservationId) => {
     await reservationAPI.cancelReservation(reservationId)
     ElMessage.success('Reservation cancelled successfully')
 
-    // 刷新预订列表
+    // 刷新预订列表 - 无论成功与否都尝试刷新列表
     await fetchReservations()
   } catch (error) {
     if (error !== 'cancel') { // 用户点击了取消按钮

@@ -16,6 +16,7 @@ type ShowtimeService interface {
 	DeleteShowtimeByID(showtimeID uint) error
 	GetShowtimeByID(showtimeID uint) (*model.Showtime, error)
 	GetShowtimesByMovieID(movieID uint) ([]model.Showtime, error)
+	GetAllShowtimes() ([]model.Showtime, error)
 }
 
 type showtimeService struct {
@@ -84,6 +85,14 @@ func (s *showtimeService) GetShowtimeByID(showtimeID uint) (*model.Showtime, err
 
 func (s *showtimeService) GetShowtimesByMovieID(movieID uint) ([]model.Showtime, error) {
 	showtimes, err := s.repo.GetByMovieID(uint(movieID))
+	if err != nil {
+		return nil, err
+	}
+	return showtimes, nil
+}
+
+func (s *showtimeService) GetAllShowtimes() ([]model.Showtime, error) {
+	showtimes, err := s.repo.ListAll()
 	if err != nil {
 		return nil, err
 	}
