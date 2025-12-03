@@ -8,7 +8,7 @@ type User struct {
 	ID             uint     `gorm:"primaryKey" json:"id"`
 	Name           string   `gorm:"not null;unique" json:"name"`
 	HashedPassword string   `gorm:"not null" json:"hashed_password"`
-	Role           UserRole `gorm:"not null";not null" json:"role"`
+	Role           UserRole `gorm:"not null" json:"role"`
 }
 
 type UserRole string

@@ -18,8 +18,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	// Initialize JWT security with secret key from config
-	security.Init(cfg.JWTSecretKey)
+	security.InitJWT(cfg.JWTSecretKey)
 
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseDSN), &gorm.Config{})
 	if err != nil {
