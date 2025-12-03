@@ -89,7 +89,13 @@ const fetchMovieDetail = async () => {
     await fetchShowtimes()
   } catch (error) {
     console.error('Failed to fetch movie:', error)
-    ElMessage.error('Failed to load movie details')
+    let message = 'Failed to load movie details'
+    if (error.response?.data?.error?.message) {
+      message = error.response.data.error.message
+    } else if (error.response?.data?.message) {
+      message = error.response.data.message
+    }
+    ElMessage.error(message)
   }
 }
 
@@ -111,7 +117,13 @@ const fetchShowtimes = async () => {
     }
   } catch (error) {
     console.error('Failed to fetch showtimes:', error)
-    ElMessage.error('Failed to load showtimes')
+    let message = 'Failed to load showtimes'
+    if (error.response?.data?.error?.message) {
+      message = error.response.data.error.message
+    } else if (error.response?.data?.message) {
+      message = error.response.data.message
+    }
+    ElMessage.error(message)
   } finally {
     isLoading.value = false
   }

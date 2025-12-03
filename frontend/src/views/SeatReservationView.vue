@@ -58,6 +58,7 @@ import { showtimeAPI } from '@/api/showtime'
 import { movieAPI } from '@/api/movie'
 import { reservationAPI } from '@/api/reservation'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ERROR_CODES } from '@/constants/errorCodes'
 
 const route = useRoute()
 const router = useRouter()
@@ -84,7 +85,13 @@ const fetchShowtimeInfo = async () => {
     remainingTickets.value = availabilityResponse.data.data.remaining_tickets
   } catch (error) {
     console.error('Failed to fetch showtime info:', error)
-    ElMessage.error('Failed to load showtime information')
+    let message = 'Failed to load showtime information'
+    if (error.response?.data?.error?.message) {
+      message = error.response.data.error.message
+    } else if (error.response?.data?.message) {
+      message = error.response.data.message
+    }
+    ElMessage.error(message)
     router.push('/')
   }
 }
@@ -137,10 +144,16 @@ const confirmReservation = async () => {
     }
     console.error('Reservation failed:', error)
     let message = 'Reservation failed'
-    if (error.response?.data?.message) {
-      message = error.response.data.message
-    } else if (error.response?.data?.code) {
-      message = error.response.data.code
+    if (error.response?.data) {
+      // 检查是否是重复预订错误
+      if (error.response.data.error?.code === ERROR_CODES.ALREADY_RESERVED ||
+          error.response.data.error?.message?.includes('already reserved')) {
+        ElMessage.warning('You have already booked a ticket for this showtime')
+        return
+      }
+      // 使用错误消息或错误代码
+      message = error.response.data.error?.message || error.response.data.error?.code ||
+                error.response.data.message || error.response.data.code || message
     }
     ElMessage.error(message)
   } finally {

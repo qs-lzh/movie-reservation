@@ -158,7 +158,15 @@ func TestLogin(t *testing.T) {
 		mockAuthService := &mockAuthService{
 			loginToken: "mock_jwt_token",
 		}
-		h := handler.NewAuthHandler(&app.App{AuthService: mockAuthService})
+		mockUserService := &mockUserService{
+			getUserRoleFn: func(username string) (model.UserRole, error) {
+				return model.RoleUser, nil
+			},
+		}
+		h := handler.NewAuthHandler(&app.App{
+			AuthService: mockAuthService,
+			UserService: mockUserService,
+		})
 
 		router := gin.New()
 		router.POST("/login", h.Login)

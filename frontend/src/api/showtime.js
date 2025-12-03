@@ -1,6 +1,10 @@
 import apiClient from './index'
 
 export const showtimeAPI = {
+  getShowtimes: () => {
+    return apiClient.get('/showtimes/')
+  },
+
   getShowtimeById: (id) => {
     return apiClient.get(`/showtimes/${id}`)
   },

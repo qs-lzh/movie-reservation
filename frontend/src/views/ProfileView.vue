@@ -9,6 +9,7 @@
         </div>
         <div class="user-info">
           <h2>Welcome, {{ userStore.user?.username || 'User' }}!</h2>
+          <p>User Role: <el-tag :type="getRoleTagType(userStore.user?.role)">{{ userStore.user?.role || 'user' }}</el-tag></p>
           <p>Member since {{ formatDate(new Date()) }}</p>
         </div>
       </div>
@@ -106,7 +107,13 @@ const fetchReservations = async () => {
     }
   } catch (error) {
     console.error('Failed to fetch reservations:', error)
-    ElMessage.error('Failed to load reservations')
+    let message = 'Failed to load reservations'
+    if (error.response?.data?.error?.message) {
+      message = error.response.data.error.message
+    } else if (error.response?.data?.message) {
+      message = error.response.data.message
+    }
+    ElMessage.error(message)
   } finally {
     isLoading.value = false
   }
@@ -135,7 +142,13 @@ const cancelReservation = async (reservationId) => {
   } catch (error) {
     if (error !== 'cancel') { // 用户点击了取消按钮
       console.error('Failed to cancel reservation:', error)
-      ElMessage.error('Failed to cancel reservation')
+      let message = 'Failed to cancel reservation'
+      if (error.response?.data?.error?.message) {
+        message = error.response.data.error.message
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message
+      }
+      ElMessage.error(message)
     }
   } finally {
     isCancelling.value = false
@@ -159,6 +172,18 @@ const formatDate = (dateString) => {
     month: 'short',
     day: 'numeric'
   })
+}
+
+// 获取角色标签类型
+const getRoleTagType = (role) => {
+  switch (role) {
+    case 'admin':
+      return 'danger'
+    case 'user':
+      return 'success'
+    default:
+      return 'info'
+  }
 }
 
 // 格式化时间

@@ -157,7 +157,13 @@ const fetchMovies = async () => {
     movies.value = response.data.data || []
   } catch (error) {
     console.error('Failed to fetch movies:', error)
-    ElMessage.error('Failed to load movies')
+    let message = 'Failed to load movies'
+    if (error.response?.data?.error?.message) {
+      message = error.response.data.error.message
+    } else if (error.response?.data?.message) {
+      message = error.response.data.message
+    }
+    ElMessage.error(message)
   }
 }
 
