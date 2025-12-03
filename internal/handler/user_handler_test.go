@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 
 	"github.com/qs-lzh/movie-reservation/internal/app"
@@ -21,6 +22,7 @@ type mockUserService struct {
 	createUserErr  error
 	validateUserFn func(username, password string) (bool, error)
 	getUserRoleFn  func(username string) (model.UserRole, error)
+	getUserIDFn    func(username string) (uint, error)
 }
 
 func (m *mockUserService) CreateUser(username, password string, role model.UserRole) error {
@@ -45,19 +47,27 @@ func (m *mockUserService) GetUserRoleByName(userName string) (model.UserRole, er
 	return "", nil // Default behavior if not set
 }
 
+func (m *mockUserService) GetUserIDByName(userName string) (uint, error) {
+	if m.getUserIDFn != nil {
+		return m.getUserIDFn(userName)
+	}
+	return 1, nil // Default behavior if not set
+}
+
 // mockAuthService implements service.AuthService
 type mockAuthService struct {
-	loginToken    string
-	loginErr      error
-	validateTokenErr error
+	loginToken          string
+	loginErr            error
+	validateTokenClaims jwt.MapClaims
+	validateTokenErr    error
 }
 
 func (m *mockAuthService) Login(username, password string) (string, error) {
 	return m.loginToken, m.loginErr
 }
 
-func (m *mockAuthService) ValidateToken(token string) error {
-	return m.validateTokenErr
+func (m *mockAuthService) ValidateToken(token string) (jwt.MapClaims, error) {
+	return m.validateTokenClaims, m.validateTokenErr
 }
 
 func TestRegister(t *testing.T) {
@@ -71,13 +81,12 @@ func TestRegister(t *testing.T) {
 		router.POST("/register", h.Register)
 
 		w := httptest.NewRecorder()
-		        		jsonData := `{"username": "testuser", "password": "password", "user_role": "user"}`
-		        		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
-		        
-		        req.Header.Set("Content-Type", "application/json")
-		        router.ServeHTTP(w, req)
-		
-		        require.Equal(t, http.StatusCreated, w.Code)
+		jsonData := `{"username": "testuser", "password": "password", "user_role": "user"}`
+		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, http.StatusCreated, w.Code)
 		require.Contains(t, w.Body.String(), `"success":true`)
 		require.Contains(t, w.Body.String(), `Created user named testuser successfully`)
 	})
@@ -128,12 +137,12 @@ func TestRegister(t *testing.T) {
 		h := handler.NewAuthHandler(&app.App{UserService: mockUserService})
 
 		router := gin.New()
-		        router.POST("/register", h.Register)
-		
-		        w := httptest.NewRecorder()
-		        		jsonData := `{"username": "testuser", "password": "password", "user_role": "user"}`
-		        		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
-		        		req.Header.Set("Content-Type", "application/json")
+		router.POST("/register", h.Register)
+
+		w := httptest.NewRecorder()
+		jsonData := `{"username": "testuser", "password": "password", "user_role": "user"}`
+		req, _ := http.NewRequest("POST", "/register", strings.NewReader(jsonData))
+		req.Header.Set("Content-Type", "application/json")
 		router.ServeHTTP(w, req)
 
 		require.Equal(t, http.StatusInternalServerError, w.Code)

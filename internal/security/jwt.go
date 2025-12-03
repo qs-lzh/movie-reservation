@@ -14,13 +14,18 @@ var (
 	ErrInvalidClaim = errors.New("Invalid token claim")
 )
 
-var secretKey = []byte("qs-lzh-security-key")
+var secretKey []byte
 
-func CreateToken(username string, userRole model.UserRole) (string, error) {
+func InitJWT(key string) {
+	secretKey = []byte(key)
+}
+
+func CreateToken(username string, userID uint, userRole model.UserRole) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"exp":       time.Now().Add(time.Hour * 24).Unix(),
 			"username":  username,
+			"user_id":   userID,
 			"user_role": userRole,
 		})
 	tokenString, err := token.SignedString(secretKey)

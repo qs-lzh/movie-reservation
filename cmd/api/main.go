@@ -7,6 +7,7 @@ import (
 	"github.com/qs-lzh/movie-reservation/interfaces/web"
 	"github.com/qs-lzh/movie-reservation/internal/app"
 	"github.com/qs-lzh/movie-reservation/internal/model"
+	"github.com/qs-lzh/movie-reservation/internal/security"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -16,6 +17,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 	}
+
+	// Initialize JWT security with secret key from config
+	security.Init(cfg.JWTSecretKey)
+
 	db, err := gorm.Open(postgres.Open(cfg.DatabaseDSN), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("failed to open gorm.DB: %v", err)

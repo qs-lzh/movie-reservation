@@ -15,6 +15,7 @@ type UserService interface {
 	DeleteUser(userName string, password string) error
 	ValidateUser(userName string, password string) (bool, error)
 	GetUserRoleByName(userName string) (model.UserRole, error)
+	GetUserIDByName(userName string) (uint, error)
 }
 
 type userService struct {
@@ -89,4 +90,15 @@ func (s *userService) GetUserRoleByName(userName string) (model.UserRole, error)
 		return "", err
 	}
 	return user.Role, nil
+}
+
+func (s *userService) GetUserIDByName(userName string) (uint, error) {
+	user, err := s.repo.GetByName(userName)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, ErrNotFound
+		}
+		return 0, err
+	}
+	return uint(user.ID), nil
 }

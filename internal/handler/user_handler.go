@@ -63,6 +63,7 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	tokenStr, err := h.App.AuthService.Login(req.UserName, req.Password)
 	if err != nil {
 		dto.InternalServerError(ctx, "Failed to login")
+		return
 	}
 	// change the parameter secure to true when deploy
 	ctx.SetCookie("jwt", tokenStr, 3600, "/", "", false, true)

@@ -25,8 +25,16 @@ func RequireAuth() gin.HandlerFunc {
 			return
 		}
 
-		// For RequireAdmin use
-		c.Set("claims", claims)
+		// Extract user_id from claims and convert from float64 to uint
+		userIDFloat, ok := claims["user_id"].(float64)
+		if !ok {
+			dto.InternalServerError(c, "Invalid user_id in token")
+			return
+		}
+		userID := uint(userIDFloat)
+
+		c.Set("user_id", userID)
+		c.Set("user_role", claims["user_role"])
 
 		c.Next()
 	}

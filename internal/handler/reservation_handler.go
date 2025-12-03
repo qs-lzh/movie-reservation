@@ -22,18 +22,12 @@ func NewReservationHandler(app *app.App) *ReservationHandler {
 	}
 }
 
-// NOTE: This is a placeholder for a real auth middleware.
-// In a real application, a middleware would extract the user ID
-// from a JWT or session and put it in the context.
 func getUserIDFromContext(ctx *gin.Context) (uint, error) {
-	// For now, we'll just return a mock user ID.
-	// In a real implementation, you might do something like:
-	// userID, exists := ctx.Get("userID")
-	// if !exists {
-	// 	 return 0, errors.New("unauthorized")
-	// }
-	// return userID.(uint), nil
-	return 1, nil // Mock user ID
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		return 0, errors.New("unauthorized")
+	}
+	return userID.(uint), nil
 }
 
 type CreateReservationRequest struct {
@@ -129,3 +123,4 @@ func (h *ReservationHandler) CancelReservation(ctx *gin.Context) {
 
 	dto.SuccessWithMessage(ctx, http.StatusOK, nil, "Reservation cancelled successfully")
 }
+

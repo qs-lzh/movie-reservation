@@ -75,7 +75,15 @@ func (m *mockReservationService) GetRemainingTickets(showtimeID uint) (int, erro
 func setupReservationRouter(mockService service.ReservationService) *gin.Engine {
 	r := gin.Default()
 	h := handler.NewReservationHandler(&app.App{ReservationService: mockService})
+
+	// Mock authentication middleware that sets user_id in context
+	mockAuth := func(c *gin.Context) {
+		c.Set("user_id", uint(1)) // Mock user ID
+		c.Next()
+	}
+
 	group := r.Group("/reservations")
+	group.Use(mockAuth)
 	{
 		group.POST("/", h.CreateReservation)
 		group.GET("/me", h.GetMyReservations)

@@ -26,17 +26,21 @@ func NewJWTAuthService(userService UserService) *jwtAuthService {
 
 func (s *jwtAuthService) Login(username, password string) (token string, err error) {
 	isValid, err := s.userService.ValidateUser(username, password)
-	if !isValid {
-		if err != nil {
-			return "", err
-		}
-		return "", nil
-	}
-	role, err := s.userService.GetUserRoleByName(username)
 	if err != nil {
 		return "", err
 	}
-	return security.CreateToken(username, role)
+	if !isValid {
+		return "", ErrInvalidCredential
+	}
+	userRole, err := s.userService.GetUserRoleByName(username)
+	if err != nil {
+		return "", err
+	}
+	userID, err := s.userService.GetUserIDByName(username)
+	if err != nil {
+		return "", err
+	}
+	return security.CreateToken(username, userID, userRole)
 }
 
 func (s *jwtAuthService) ValidateToken(token string) (claims jwt.MapClaims, err error) {
