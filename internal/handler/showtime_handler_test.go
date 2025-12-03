@@ -207,6 +207,76 @@ func (m *mockServiceForShowtimeTests) GetShowtimesByMovieID(movieID uint) ([]mod
 	}
 	return filteredShowtimes, nil
 }
+func (m *mockServiceForShowtimeTests) GetAllShowtimes() ([]model.Showtime, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.showtimes, nil
+}
+
+func TestListAllShowtimes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("success with multiple showtimes", func(t *testing.T) {
+		mockShowtime := &mockServiceForShowtimeTests{
+			showtimes: []model.Showtime{
+				{ID: 1, MovieID: 1, StartAt: time.Now(), HallID: 1},
+				{ID: 2, MovieID: 2, StartAt: time.Now().Add(time.Hour), HallID: 2},
+				{ID: 3, MovieID: 1, StartAt: time.Now().Add(2 * time.Hour), HallID: 3},
+			},
+		}
+		h := handler.NewShowtimeHandler(&app.App{ShowtimeService: mockShowtime})
+
+		router := gin.New()
+		router.GET("/showtimes", h.ListAllShowtimes)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/showtimes", nil)
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 200, w.Code)
+		require.Contains(t, w.Body.String(), `"success":true`)
+		require.Contains(t, w.Body.String(), `"id":1`)
+		require.Contains(t, w.Body.String(), `"id":2`)
+		require.Contains(t, w.Body.String(), `"id":3`)
+	})
+
+	t.Run("success with empty showtimes", func(t *testing.T) {
+		mockShowtime := &mockServiceForShowtimeTests{
+			showtimes: []model.Showtime{},
+		}
+		h := handler.NewShowtimeHandler(&app.App{ShowtimeService: mockShowtime})
+
+		router := gin.New()
+		router.GET("/showtimes", h.ListAllShowtimes)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/showtimes", nil)
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 200, w.Code)
+		require.Contains(t, w.Body.String(), `"success":true`)
+		require.Contains(t, w.Body.String(), `"data":[]`)
+	})
+
+	t.Run("service error", func(t *testing.T) {
+		mockShowtime := &mockServiceForShowtimeTests{
+			err: errors.New("database error"),
+		}
+		h := handler.NewShowtimeHandler(&app.App{ShowtimeService: mockShowtime})
+
+		router := gin.New()
+		router.GET("/showtimes", h.ListAllShowtimes)
+
+		w := httptest.NewRecorder()
+		req, _ := http.NewRequest("GET", "/showtimes", nil)
+		router.ServeHTTP(w, req)
+
+		require.Equal(t, 500, w.Code)
+		require.Contains(t, w.Body.String(), `"success":false`)
+		require.Contains(t, w.Body.String(), "INTERNAL_SERVER_ERROR")
+	})
+}
 
 func TestCreateShowtime(t *testing.T) {
 	gin.SetMode(gin.TestMode)

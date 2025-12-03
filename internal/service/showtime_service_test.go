@@ -64,6 +64,20 @@ func TestShowtimeService(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, showtimeID, showtime.ID)
 
+	// test GetAllShowtimes
+	allShowtimes, err := showtimeService.GetAllShowtimes()
+	require.NoError(t, err)
+	require.GreaterOrEqual(t, len(allShowtimes), 1)
+	// verify the created showtime is in the list
+	found := false
+	for _, st := range allShowtimes {
+		if st.ID == showtimeID {
+			found = true
+			break
+		}
+	}
+	require.True(t, found, "Created showtime should be in the list of all showtimes")
+
 	// test UpdateShowtime
 	hallID = uint(2)
 	err = showtimeService.UpdateShowtime(showtimeID, startTime, hallID)

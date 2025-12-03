@@ -97,6 +97,12 @@ func (m *mockShowtimeService) GetShowtimesByMovieID(movieID uint) ([]model.Showt
 	}
 	return filteredShowtimes, nil
 }
+func (m *mockShowtimeService) GetAllShowtimes() ([]model.Showtime, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.showtimes, nil
+}
 
 func TestGetAllMovies(t *testing.T) {
 	gin.SetMode(gin.TestMode)
