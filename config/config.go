@@ -7,9 +7,11 @@ import (
 )
 
 type Config struct {
-	DatabaseDSN    string
-	Addr           string
-	JWTSecretKey   string
+	DatabaseDSN  string
+	Addr         string
+	JWTSecretKey string
+	CertPath     string
+	KeyPath      string
 }
 
 func LoadConfig() (*Config, error) {
@@ -19,9 +21,13 @@ func LoadConfig() (*Config, error) {
 	databaseDSN := os.Getenv("DATABASE_DSN")
 	addr := os.Getenv("ADDR")
 	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
+	crtPath := os.Getenv("CERT_PATH")
+	keyPath := os.Getenv("KEY_PATH")
 	return &Config{
 		DatabaseDSN:  databaseDSN,
 		Addr:         addr,
 		JWTSecretKey: jwtSecretKey,
+		CertPath:     crtPath,
+		KeyPath:      keyPath,
 	}, nil
 }

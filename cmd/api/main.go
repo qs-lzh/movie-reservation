@@ -31,7 +31,9 @@ func main() {
 	defer app.Close()
 	router := web.InitRouter(app)
 
-	router.Run(cfg.Addr)
+	if err := router.RunTLS(cfg.Addr, cfg.CertPath, cfg.KeyPath); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func initDB(db *gorm.DB) {
