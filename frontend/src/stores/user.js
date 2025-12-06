@@ -7,9 +7,9 @@ export const useUserStore = defineStore('user', () => {
   const user = ref(null)
   const isAuthenticated = ref(false)
 
-  const login = async (username, password) => {
+  const login = async (username, password, keyValue) => {
     try {
-      const response = await authAPI.login(username, password)
+      const response = await authAPI.login(username, password, keyValue)
       if (response.data.data) {
         // 成功登录后，从响应中获取用户信息
         const userData = response.data.data

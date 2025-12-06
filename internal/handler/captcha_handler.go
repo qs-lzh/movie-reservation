@@ -35,7 +35,6 @@ func (h *CaptchaHandler) GenerateCaptcha(ctx *gin.Context) {
 
 func (h *CaptchaHandler) VerifyCaptcha(ctx *gin.Context) {
 	fmt.Println("start running captchaHandler.VerifyCaptcha......")
-	// Define struct to hold the request body
 	type CaptchaVerifyRequest struct {
 		Dots []service.Dot `json:"dots" binding:"required"`
 		Key  string        `json:"key" binding:"required"`
@@ -47,17 +46,16 @@ func (h *CaptchaHandler) VerifyCaptcha(ctx *gin.Context) {
 		return
 	}
 
-	// Verify captcha using the service with cache key
 	valid, err := h.App.CaptchaService.VerifyWithKey(req.Dots, req.Key)
 	if err != nil {
 		dto.InternalServerError(ctx, "Failed to verify captcha: "+err.Error())
 		return
 	}
 
-	// Store validation result in cache (optional: could be used for checking later)
-	// We might want to clean up the cache entry after verification regardless of success
-	// Or keep the result for a short duration
-	h.App.Cache.SetBool(req.Key, valid)
+	if err := h.App.Cache.SetBool(req.Key, valid); err != nil {
+		dto.InternalServerError(ctx, "Failed to set bool in cache")
+		return
+	}
 
 	dto.Success(ctx, 200, gin.H{
 		"success": valid,

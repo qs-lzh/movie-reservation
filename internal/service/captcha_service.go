@@ -105,6 +105,7 @@ func (s *captchaService) Verify(clickData []Dot, dotAnswerData map[int]*click.Do
 		return false
 	}
 	fmt.Println("1")
+
 	// the key of dotAnswerData begin with 0
 	chkRet := false
 	for idx, dot := range clickData {
@@ -123,14 +124,11 @@ func (s *captchaService) Verify(clickData []Dot, dotAnswerData map[int]*click.Do
 }
 
 func (s *captchaService) VerifyWithKey(clickData []Dot, cacheKey string) (bool, error) {
-	// Retrieve the stored answer data from cache using the provided key
-	// Since we now store the dot answer data directly, we can retrieve it as a map
 	dotAnswerData := make(map[int]*click.Dot)
 	if err := s.Cache.Get(cacheKey, &dotAnswerData); err != nil {
 		return false, fmt.Errorf("failed to get captcha answer data from cache: %v", err)
 	}
 
-	// Verify the user's clicks against the answer
 	valid := s.Verify(clickData, dotAnswerData)
 
 	return valid, nil

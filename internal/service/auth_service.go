@@ -7,7 +7,7 @@ import (
 )
 
 type AuthService interface {
-	Login(username, password string) (token string, err error)
+	Login(username, password, key string) (token string, err error)
 	ValidateToken(token string) (claims jwt.MapClaims, err error)
 }
 
@@ -24,7 +24,8 @@ func NewJWTAuthService(userService UserService) *jwtAuthService {
 	}
 }
 
-func (s *jwtAuthService) Login(username, password string) (token string, err error) {
+func (s *jwtAuthService) Login(username, password, key string) (token string, err error) {
+
 	isValid, err := s.userService.ValidateUser(username, password)
 	if err != nil {
 		return "", err

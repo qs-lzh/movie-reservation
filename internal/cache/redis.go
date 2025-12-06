@@ -48,3 +48,11 @@ func (r *RedisCache) SetBool(key string, value bool) error {
 	}
 	return r.client.Set(ctx, key, strValue, 5*time.Minute).Err()
 }
+
+func (r *RedisCache) GetBool(key string) (value bool, err error) {
+	value, err = r.client.Get(ctx, key).Bool()
+	if err != nil {
+		return false, err
+	}
+	return value, nil
+}

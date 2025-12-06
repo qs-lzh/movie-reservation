@@ -80,7 +80,7 @@ const handleSubmit = async () => {
     await loginFormRef.value.validate()
     isLoading.value = true
 
-    const result = await userStore.login(form.username, form.password)
+    const result = await userStore.login(form.username, form.password, key.value)
 
     if (result.success) {
       ElMessage.success(result.message)
@@ -152,7 +152,7 @@ const clickEvents = {
     }
   },
   refresh: () => {
-    clickedDots = []; // 刷新时清空点击点
+    clickedDots = [];
   }
 };
 

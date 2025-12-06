@@ -51,6 +51,7 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 type LoginRequest struct {
 	UserName string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+	CacheKey string `json:"key" binding:"required"`
 }
 
 func (h *AuthHandler) Login(ctx *gin.Context) {
@@ -60,7 +61,16 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	tokenStr, err := h.App.AuthService.Login(req.UserName, req.Password)
+	valid, err := h.App.Cache.GetBool(req.CacheKey)
+	if err != nil {
+		dto.InternalServerError(ctx, "Failed to get from cache")
+		return
+	}
+	if !valid {
+		dto.Unauthorized(ctx, "Captcha not passed")
+		return
+	}
+	tokenStr, err := h.App.AuthService.Login(req.UserName, req.Password, req.CacheKey)
 	if err != nil {
 		dto.InternalServerError(ctx, "Failed to login")
 		return
