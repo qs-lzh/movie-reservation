@@ -6,6 +6,7 @@ import (
 	"github.com/qs-lzh/movie-reservation/config"
 	"github.com/qs-lzh/movie-reservation/interfaces/web"
 	"github.com/qs-lzh/movie-reservation/internal/app"
+	"github.com/qs-lzh/movie-reservation/internal/cache"
 	"github.com/qs-lzh/movie-reservation/internal/model"
 	"github.com/qs-lzh/movie-reservation/internal/security"
 	"gorm.io/driver/postgres"
@@ -24,10 +25,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to open gorm.DB: %v", err)
 	}
-
 	initDB(db)
 
-	app := app.New(cfg, db)
+	cache := cache.NewRedisCache(cfg.CacheURL)
+
+	app := app.New(cfg, db, cache)
 	defer app.Close()
 	router := web.InitRouter(app)
 

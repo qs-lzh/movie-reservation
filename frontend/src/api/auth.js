@@ -10,6 +10,7 @@ export const authAPI = {
   },
 
   login: (username, password) => {
+    console.log("dafssjdsjsaaaaaaaaaaaaa")
     return apiClient.post('/users/login', {
       username,
       password

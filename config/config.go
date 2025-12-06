@@ -12,6 +12,7 @@ type Config struct {
 	JWTSecretKey string
 	CertPath     string
 	KeyPath      string
+	CacheURL     string
 }
 
 func LoadConfig() (*Config, error) {
@@ -23,11 +24,13 @@ func LoadConfig() (*Config, error) {
 	jwtSecretKey := os.Getenv("JWT_SECRET_KEY")
 	crtPath := os.Getenv("CERT_PATH")
 	keyPath := os.Getenv("KEY_PATH")
+	cacheURL := os.Getenv("CACHE_URL")
 	return &Config{
 		DatabaseDSN:  databaseDSN,
 		Addr:         addr,
 		JWTSecretKey: jwtSecretKey,
 		CertPath:     crtPath,
 		KeyPath:      keyPath,
+		CacheURL:     cacheURL,
 	}, nil
 }
