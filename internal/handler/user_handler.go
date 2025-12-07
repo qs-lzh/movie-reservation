@@ -27,12 +27,23 @@ type RegisterRequest struct {
 	UserName string         `json:"username" binding:"required"`
 	Password string         `json:"password" binding:"required"`
 	Role     model.UserRole `json:"user_role" binding:"required"`
+	CacheKey string         `json:"key" binding:"required"`
 }
 
 func (h *AuthHandler) Register(ctx *gin.Context) {
 	var req RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		dto.BadRequest(ctx, "Invalid request body")
+		return
+	}
+
+	valid, err := h.App.Cache.GetBool(req.CacheKey)
+	if err != nil {
+		dto.InternalServerError(ctx, "Failed to get from cache")
+		return
+	}
+	if !valid {
+		dto.Unauthorized(ctx, "Captcha not passed")
 		return
 	}
 

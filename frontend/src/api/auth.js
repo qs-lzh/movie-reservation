@@ -1,11 +1,12 @@
 import apiClient from './index'
 
 export const authAPI = {
-  register: (username, password, role = 'user') => {
+  register: (username, password, role = 'user', key) => {
     return apiClient.post('/users/register', {
       username,
       password,
-      user_role: role
+      user_role: role,
+      key: key
     })
   },
 

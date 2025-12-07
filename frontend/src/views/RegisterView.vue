@@ -35,6 +35,14 @@
             <el-radio label="admin">Admin</el-radio>
           </el-radio-group>
         </el-form-item>
+
+        <gocaptcha-click
+          :config="config"
+          :data="data"
+          :events="clickEvents"
+          ref="captchaRef"
+        />
+
         <el-form-item>
           <el-button
             type="primary"
@@ -56,21 +64,23 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
+import apiClient from '../api/index.js';
 
 const router = useRouter()
 const userStore = useUserStore()
 const isLoading = ref(false)
 const registerFormRef = ref()
+const captchaRef = ref(null);
 
 const form = reactive({
   username: '',
   password: '',
   confirmPassword: '',
-  role: 'user' // 默认角色为 'user'
+  role: 'user',
 })
 
 const rules = {
@@ -100,9 +110,16 @@ const rules = {
 const handleSubmit = async () => {
   try {
     await registerFormRef.value.validate()
+
+    // Make sure captcha is completed before registration
+    if (!key.value) {
+      ElMessage.error('Please complete the captcha verification')
+      return
+    }
+
     isLoading.value = true
 
-    const result = await userStore.register(form.username, form.password, form.role)
+    const result = await userStore.register(form.username, form.password, form.role, key.value)
 
     if (result.success) {
       ElMessage.success(result.message)
@@ -116,6 +133,71 @@ const handleSubmit = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+// 配置项
+const config = {
+  width: 300,
+  height: 150,
+  thumbWidth: 50,
+  thumbHeight: 50,
+  showTheme: true,
+  title: "请完成验证"
+};
+const data = ref(null);
+const key = ref(null);
+async function fetchCaptcha() {
+  try {
+    const res = await apiClient.get("/captcha");
+    data.value = {
+      image: res.data.data.image,
+      thumb: res.data.data.thumb,
+    }
+    key.value = res.data.data.key;
+  } catch (err) {
+    console.error("获取验证码失败:", err);
+  }
+}
+onMounted(async () => {
+  await fetchCaptcha();
+  if (captchaRef.value) {
+    captchaRef.value.refresh();
+  }
+});
+
+let clickedDots = [];
+const clickEvents = {
+  click: (x, y) => {
+    clickedDots.push({ x, y });
+  },
+  confirm: async (reset) => {
+    try {
+      const res = await apiClient.post("/captcha", { dots: clickedDots, key: key.value });
+
+      if (res.data.data.success) {
+        alert("验证成功");
+        clickedDots = [];
+        return true;
+      } else {
+        alert("验证失败");
+        reset();
+        clickedDots = [];
+        return false;
+      }
+    } catch (err) {
+      alert("提交失败，请重试");
+      reset?.();
+      clickedDots = [];
+      return false;
+    }
+  },
+  refresh: () => {
+    clickedDots = [];
+  }
+};
+
+function refreshCaptcha() {
+  captchaRef.value.refresh();
 }
 </script>
 

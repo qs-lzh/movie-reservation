@@ -156,7 +156,6 @@ const clickEvents = {
   }
 };
 
-// 调用方法
 function refreshCaptcha() {
   captchaRef.value.refresh();
 }
