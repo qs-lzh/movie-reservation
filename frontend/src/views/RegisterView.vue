@@ -36,6 +36,16 @@
           </el-radio-group>
         </el-form-item>
 
+        <el-form-item prop="adminRolePassword" v-if="form.role === 'admin'">
+          <el-input
+            v-model="form.adminRolePassword"
+            type="password"
+            placeholder="Admin Role Password"
+            size="large"
+            prefix-icon="Lock"
+          />
+        </el-form-item>
+
         <gocaptcha-click
           :config="config"
           :data="data"
@@ -81,6 +91,7 @@ const form = reactive({
   password: '',
   confirmPassword: '',
   role: 'user',
+  adminRolePassword: "",
 })
 
 const rules = {
@@ -119,7 +130,8 @@ const handleSubmit = async () => {
 
     isLoading.value = true
 
-    const result = await userStore.register(form.username, form.password, form.role, key.value)
+    const result = await userStore.register(form.username, form.password, form.role, key.value,
+    form.adminRolePassword)
 
     if (result.success) {
       ElMessage.success(result.message)

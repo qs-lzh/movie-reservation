@@ -24,10 +24,11 @@ func NewAuthHandler(app *app.App) *AuthHandler {
 }
 
 type RegisterRequest struct {
-	UserName string         `json:"username" binding:"required"`
-	Password string         `json:"password" binding:"required"`
-	Role     model.UserRole `json:"user_role" binding:"required"`
-	CacheKey string         `json:"key" binding:"required"`
+	UserName          string         `json:"username" binding:"required"`
+	Password          string         `json:"password" binding:"required"`
+	Role              model.UserRole `json:"user_role" binding:"required"`
+	CacheKey          string         `json:"key" binding:"required"`
+	AdminRolePassword string         `json:"admin_role_password"`
 }
 
 func (h *AuthHandler) Register(ctx *gin.Context) {
@@ -45,6 +46,18 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 	if !valid {
 		dto.Unauthorized(ctx, "Captcha not passed")
 		return
+	}
+
+	// If the user want to register an admin account, need admin-role-password
+	if req.Role == model.RoleAdmin {
+		if req.AdminRolePassword == "" {
+			dto.BadRequest(ctx, "Invalid request body: need admin role password to register an admin")
+			return
+		}
+		if req.AdminRolePassword != h.App.Config.AdminRolePassword {
+			dto.Unauthorized(ctx, "You do not have the permission to register an admin account: Wrong admin role password")
+			return
+		}
 	}
 
 	if err := h.App.UserService.CreateUser(req.UserName, req.Password, req.Role); err != nil {

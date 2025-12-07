@@ -38,11 +38,11 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
-  const register = async (username, password, role = 'user', key) => {
+  const register = async (username, password, role = 'user', key, adminRolePassword) => {
     try {
-      const response = await authAPI.register(username, password, role, key)
+      const response = await authAPI.register(username, password, role, key, adminRolePassword)
 
-      // 注册成功
+      // if register successfully
       if (response.data.data) {
         return { success: true, message: response.data.data || 'Registration successful' }
       } else {

@@ -114,7 +114,7 @@ func (s *captchaService) Verify(clickData []Dot, dotAnswerData map[int]*click.Do
 		answerDot := dotAnswerData[idx]
 		fmt.Printf("answerDot: {%d, %d}\n", answerDot.X, answerDot.Y)
 		fmt.Printf("answerRec: {%d, %d}\n", answerDot.Width, answerDot.Height)
-		chkRet = click.Validate(dot.X, dot.Y, answerDot.X, answerDot.Y, answerDot.Width, answerDot.Height, 5)
+		chkRet = click.Validate(dot.X, dot.Y, answerDot.X, answerDot.Y, answerDot.Width, answerDot.Height, 30)
 		if !chkRet {
 			fmt.Println(chkRet)
 			return false
