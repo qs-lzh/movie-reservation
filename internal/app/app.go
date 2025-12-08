@@ -1,6 +1,7 @@
 package app
 
 import (
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/qs-lzh/movie-reservation/config"
@@ -11,8 +12,9 @@ import (
 type App struct {
 	Config *config.Config
 
-	DB    *gorm.DB
-	Cache *cache.RedisCache
+	DB     *gorm.DB
+	Cache  *cache.RedisCache
+	Logger *zap.Logger
 
 	UserService        service.UserService
 	MovieService       service.MovieService
@@ -22,12 +24,13 @@ type App struct {
 	CaptchaService     service.CaptchaService
 }
 
-func New(config *config.Config, db *gorm.DB, cache *cache.RedisCache) *App {
+func New(config *config.Config, db *gorm.DB, cache *cache.RedisCache, logger *zap.Logger) *App {
 	userService := service.NewUserService(db)
 	return &App{
 		Config:             config,
 		DB:                 db,
 		Cache:              cache,
+		Logger:             logger,
 		UserService:        userService,
 		MovieService:       service.NewMovieService(db),
 		ShowtimeService:    service.NewShowtimeService(db),

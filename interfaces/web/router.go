@@ -15,9 +15,10 @@ func InitRouter(app *app.App) *gin.Engine {
 	reservationHandler := handler.NewReservationHandler(app)
 	captchaHandler := handler.NewCaptchaHandler(app)
 
-	r := gin.Default()
-	// r.Use(gin.Logger())
-	// r.Use(gin.Recovery())
+	r := gin.New()
+
+	// use zap as logger
+	r.Use(middleware.ZapLogger(app.Logger))
 
 	r.GET("/captcha", captchaHandler.GenerateCaptcha)
 	r.POST("/captcha", captchaHandler.VerifyCaptcha)

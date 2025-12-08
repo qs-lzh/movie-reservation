@@ -123,4 +123,3 @@ func (h *ReservationHandler) CancelReservation(ctx *gin.Context) {
 
 	dto.SuccessWithMessage(ctx, http.StatusOK, nil, "Reservation cancelled successfully")
 }
-
