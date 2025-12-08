@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -88,12 +89,19 @@ func (h *MovieHandler) CreateMovie(ctx *gin.Context) {
 		return
 	}
 
+	// confirm no movie is the same title
+	anotherMovie, err := h.App.MovieService.GetMovieByTitle(req.Title)
+	if err == nil && anotherMovie != nil {
+		dto.Conflict(ctx, "Movie_EXISTS", fmt.Sprintf("Movie %s already exists", req.Title))
+		return
+	}
+
 	movie := &model.Movie{
 		Title:       req.Title,
 		Description: req.Description,
 	}
 
-	err := h.App.MovieService.CreateMovie(movie)
+	err = h.App.MovieService.CreateMovie(movie)
 	if err != nil {
 		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to create movie")

@@ -47,6 +47,10 @@ const handleLogout = async () => {
               <el-icon><Plus /></el-icon>
               Add Movie
             </el-menu-item>
+            <el-menu-item v-if="userStore.user?.role === 'admin'" index="/admin/halls">
+              <el-icon><House /></el-icon>
+              Manage Halls
+            </el-menu-item>
 
             <el-menu-item index="/profile">
               <el-icon><User /></el-icon>

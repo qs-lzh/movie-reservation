@@ -43,6 +43,11 @@ const router = createRouter({
       name: 'admin-update-movie',
       component: () => import('../views/AdminUpdateMovieView.vue')
     },
+    {
+      path: '/admin/halls',
+      name: 'hall-management',
+      component: () => import('../views/HallManagementView.vue')
+    },
   ]
 })
 

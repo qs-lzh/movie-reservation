@@ -38,12 +38,13 @@ type CreateReservationRequest struct {
 
 // @route POST /reservations
 func (h *ReservationHandler) CreateReservation(ctx *gin.Context) {
-	userID, err := getUserIDFromContext(ctx)
-	if err != nil {
-		ctx.Error(err)
+	// Extract user_id from context (guaranteed to exist by RequireAuth middleware)
+	userIDValue, exists := ctx.Get("user_id")
+	if !exists {
 		dto.Unauthorized(ctx, "User not authenticated")
 		return
 	}
+	userID := userIDValue.(uint)
 
 	var req CreateReservationRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -52,7 +53,7 @@ func (h *ReservationHandler) CreateReservation(ctx *gin.Context) {
 		return
 	}
 
-	err = h.App.ReservationService.Reserve(userID, req.ShowtimeID)
+	err := h.App.ReservationService.Reserve(userID, req.ShowtimeID)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrShowtimeNotExist):

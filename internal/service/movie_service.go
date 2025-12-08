@@ -14,6 +14,7 @@ type MovieService interface {
 	UpdateMovie(movie *model.Movie) error
 	DeleteMovieByID(id uint) error
 	GetMovieByID(id uint) (*model.Movie, error)
+	GetMovieByTitle(title string) (*model.Movie, error)
 	GetAllMovies() ([]model.Movie, error)
 }
 
@@ -73,6 +74,17 @@ func (s *movieService) DeleteMovieByID(id uint) error {
 
 func (s *movieService) GetMovieByID(id uint) (*model.Movie, error) {
 	movie, err := s.repo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return movie, nil
+}
+
+func (s *movieService) GetMovieByTitle(title string) (*model.Movie, error) {
+	movie, err := s.repo.GetByTitle(title)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrNotFound
