@@ -13,6 +13,7 @@ func InitRouter(app *app.App) *gin.Engine {
 	movieHandler := handler.NewMovieHandler(app)
 	showtimeHandler := handler.NewShowtimeHandler(app)
 	reservationHandler := handler.NewReservationHandler(app)
+	hallHandler := handler.NewHallHandler(app)
 	captchaHandler := handler.NewCaptchaHandler(app)
 
 	r := gin.New()
@@ -63,6 +64,16 @@ func InitRouter(app *app.App) *gin.Engine {
 		reservations.POST("/", reservationHandler.CreateReservation)
 		reservations.GET("/me", reservationHandler.GetMyReservations)
 		reservations.DELETE("/:id", reservationHandler.CancelReservation)
+	}
+
+	halls := r.Group("halls")
+	{
+		halls.GET("/", hallHandler.GetAllHalls)
+		halls.GET("/:id", hallHandler.GetHallByID)
+		// [Admin]
+		halls.POST("/", middleware.RequireAuth(), middleware.RequireAdmin(), hallHandler.CreateHall)
+		halls.PUT("/:id", middleware.RequireAuth(), middleware.RequireAdmin(), hallHandler.UpdateHall)
+		halls.DELETE("/:id", middleware.RequireAuth(), middleware.RequireAdmin(), hallHandler.DeleteHall)
 	}
 
 	return r

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -24,7 +23,7 @@ func NewMovieHandler(app *app.App) *MovieHandler {
 	}
 }
 
-// @route GET /api/movies
+// @route GET /movies
 func (h *MovieHandler) GetAllMovies(ctx *gin.Context) {
 	movies, err := h.App.MovieService.GetAllMovies()
 	if err != nil {
@@ -35,7 +34,7 @@ func (h *MovieHandler) GetAllMovies(ctx *gin.Context) {
 	dto.Success(ctx, http.StatusOK, movies)
 }
 
-// @route GET /api/movies/:id
+// @route GET /movies/:id
 func (h *MovieHandler) GetMovieByID(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
@@ -150,7 +149,6 @@ func (h *MovieHandler) UpdateMovie(ctx *gin.Context) {
 	}
 
 	dto.Success(ctx, http.StatusOK, existingMovie)
-	fmt.Println("movie handler send success")
 }
 
 // @route DELETE /movies/:id

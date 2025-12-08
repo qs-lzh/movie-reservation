@@ -20,6 +20,7 @@ type App struct {
 	MovieService       service.MovieService
 	ShowtimeService    service.ShowtimeService
 	ReservationService service.ReservationService
+	HallService        service.HallService
 	AuthService        service.AuthService
 	CaptchaService     service.CaptchaService
 }
@@ -35,6 +36,7 @@ func New(config *config.Config, db *gorm.DB, cache *cache.RedisCache, logger *za
 		MovieService:       service.NewMovieService(db),
 		ShowtimeService:    service.NewShowtimeService(db),
 		ReservationService: service.NewReservationService(db),
+		HallService:        service.NewHallService(db),
 		AuthService:        service.NewJWTAuthService(userService),
 		CaptchaService:     service.NewCaptchaService(cache),
 	}

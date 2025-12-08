@@ -38,51 +38,51 @@ func TestReservationService(t *testing.T) {
 		&model.Reservation{},
 	)
 
-		// Create a user, movie and showtime for testing
-		user := &model.User{ID: 1, Name: "testuser"}
-		db.Create(user)
-		movie := &model.Movie{ID: 1, Title: "Test Movie"}
-		db.Create(movie)
-		showtime := &model.Showtime{ID: 1, MovieID: 1, StartAt: time.Now()}
-		db.Create(showtime)
-	
-		svc := service.NewReservationService(db)
-	
-		// Test GetRemainingTickets for a new showtime
-		remainingTickets, err := svc.GetRemainingTickets(showtime.ID)
+	// Create a user, movie and showtime for testing
+	user := &model.User{ID: 1, Name: "testuser"}
+	db.Create(user)
+	movie := &model.Movie{ID: 1, Title: "Test Movie"}
+	db.Create(movie)
+	showtime := &model.Showtime{ID: 1, MovieID: 1, StartAt: time.Now()}
+	db.Create(showtime)
+
+	svc := service.NewReservationService(db)
+
+	// Test GetRemainingTickets for a new showtime
+	remainingTickets, err := svc.GetRemainingTickets(showtime.ID)
+	require.NoError(t, err)
+	require.Equal(t, model.DefaultSeatCount, remainingTickets)
+
+	// Test Reserve
+	err = svc.Reserve(user.ID, showtime.ID)
+	require.NoError(t, err)
+
+	// Test GetRemainingTickets after one reservation
+	remainingTickets, err = svc.GetRemainingTickets(showtime.ID)
+	require.NoError(t, err)
+	require.Equal(t, model.DefaultSeatCount-1, remainingTickets)
+
+	// Test duplicate reservation
+	err = svc.Reserve(user.ID, showtime.ID)
+	require.ErrorIs(t, err, service.ErrAlreadyReserved)
+
+	// Test reservation for non-existent showtime
+	err = svc.Reserve(user.ID, 999)
+	require.ErrorIs(t, err, service.ErrShowtimeNotExist)
+
+	// Test reservation when no tickets are available
+	// Fill up the showtime
+	for i := 2; i <= model.DefaultSeatCount; i++ {
+		anotherUser := &model.User{ID: uint(i), Name: fmt.Sprintf("testuser%d", i)}
+		db.Create(anotherUser)
+		err = svc.Reserve(anotherUser.ID, showtime.ID)
 		require.NoError(t, err)
-		require.Equal(t, model.SeatCount, remainingTickets)
-	
-		// Test Reserve
-		err = svc.Reserve(user.ID, showtime.ID)
-		require.NoError(t, err)
-	
-		// Test GetRemainingTickets after one reservation
-		remainingTickets, err = svc.GetRemainingTickets(showtime.ID)
-		require.NoError(t, err)
-		require.Equal(t, model.SeatCount-1, remainingTickets)
-	
-		// Test duplicate reservation
-		err = svc.Reserve(user.ID, showtime.ID)
-		require.ErrorIs(t, err, service.ErrAlreadyReserved)
-	
-		// Test reservation for non-existent showtime
-		err = svc.Reserve(user.ID, 999)
-		require.ErrorIs(t, err, service.ErrShowtimeNotExist)
-	
-		// Test reservation when no tickets are available
-		// Fill up the showtime
-		for i := 2; i <= model.SeatCount; i++ {
-			anotherUser := &model.User{ID: uint(i), Name: fmt.Sprintf("testuser%d", i)}
-			db.Create(anotherUser)
-			err = svc.Reserve(anotherUser.ID, showtime.ID)
-			require.NoError(t, err)
-		}
-		remainingTickets, err = svc.GetRemainingTickets(showtime.ID)
-		require.NoError(t, err)
-		require.Equal(t, 0, remainingTickets)
-	
-		anotherUser := &model.User{ID: 101, Name: "anotheruser"}
+	}
+	remainingTickets, err = svc.GetRemainingTickets(showtime.ID)
+	require.NoError(t, err)
+	require.Equal(t, 0, remainingTickets)
+
+	anotherUser := &model.User{ID: 101, Name: "anotheruser"}
 	db.Create(anotherUser)
 	err = svc.Reserve(anotherUser.ID, showtime.ID)
 	require.ErrorIs(t, err, service.ErrNoTicketsAvailable)

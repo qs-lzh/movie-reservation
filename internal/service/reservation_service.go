@@ -88,7 +88,7 @@ func (s *reservationService) GetRemainingTickets(showtimeID uint) (int, error) {
 		// gorm.Find returns nil error for no records, so this is a real error
 		return 0, err
 	}
-	return model.SeatCount - len(reservations), nil
+	return model.DefaultSeatCount - len(reservations), nil
 }
 
 func (s *reservationService) GetReservationsByUserID(userID uint) ([]model.Reservation, error) {

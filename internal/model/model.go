@@ -25,8 +25,6 @@ type Movie struct {
 	Showtimes   []Showtime `gorm:"foreignKey:MovieID" json:"showtimes"`
 }
 
-var SeatCount int = 100
-
 type Showtime struct {
 	ID      uint      `gorm:"primaryKey" json:"id"`
 	MovieID uint      `gorm:"not null" json:"movie_id"`
@@ -38,4 +36,15 @@ type Reservation struct {
 	ID         uint `gorm:"primaryKey" json:"id"`
 	ShowtimeID uint `gorm:"not null" json:"showtime_id"`
 	UserID     uint `gorm:"not null" json:"user_id"`
+}
+
+// NOTE: the default seat count should be delete once the Hall finishes
+var DefaultSeatCount int = 100
+
+type Hall struct {
+	ID        uint   `gorm:"primaryKey" json:"id"`
+	Name      string `gorm:"not null" json:"name"`
+	SeatCount int    `gorm:"not null" json:"seat_count"`
+	Rows      int    `gorm:"not null" json:"rows"`
+	Cols      int    `gorm:"not null" json:"cols"`
 }
