@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"gorm.io/gorm"
 
@@ -42,7 +43,7 @@ func (r *movieRepoGorm) GetByID(id uint) (*model.Movie, error) {
 	ctx := context.Background()
 	movie, err := gorm.G[model.Movie](r.db).Where(&model.Movie{ID: id}).First(ctx)
 	if err != nil {
-		return &model.Movie{}, err
+		return nil, err
 	}
 	return &movie, nil
 }
@@ -51,7 +52,7 @@ func (r *movieRepoGorm) GetByTitle(title string) (*model.Movie, error) {
 	ctx := context.Background()
 	movie, err := gorm.G[model.Movie](r.db).Where(&model.Movie{Title: title}).First(ctx)
 	if err != nil {
-		return &model.Movie{}, err
+		return nil, err
 	}
 	return &movie, nil
 }
@@ -76,9 +77,15 @@ func (r *movieRepoGorm) ListAll() ([]model.Movie, error) {
 
 // before use Update, please confirm the existance of the movie
 func (r *movieRepoGorm) Update(movie model.Movie) error {
+	fmt.Println(1.1)
 	ctx := context.Background()
 	if _, err := gorm.G[model.Movie](r.db).Updates(ctx, movie); err != nil {
+
+		fmt.Println(1.2)
+		fmt.Println(err)
 		return err
 	}
+
+	fmt.Println(1.3)
 	return nil
 }

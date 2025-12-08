@@ -4,6 +4,15 @@
       <el-button type="default" @click="goBack" :icon="Back">
         Back to Movies
       </el-button>
+      <el-button
+        v-if="userStore.user?.role === 'admin'"
+        type="primary"
+        @click="goToEditMovie"
+        :icon="Edit"
+        style="margin-left: 10px;"
+      >
+        Edit Movie
+      </el-button>
     </div>
 
     <el-card v-if="movie" class="movie-card">
@@ -79,10 +88,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { movieAPI } from '@/api/movie'
 import { showtimeAPI } from '@/api/showtime'
 import { ElMessage } from 'element-plus'
-import { Film, Calendar, Clock, Location, Tickets, Back } from '@element-plus/icons-vue'
+import { Film, Calendar, Clock, Location, Tickets, Back, Edit } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 const movie = ref(null)
 const showtimes = ref([])
 const isLoading = ref(true)
@@ -169,6 +180,11 @@ const goBack = () => {
 // 跳转到预订页面
 const goToReservation = (showtimeId) => {
   router.push({ name: 'seat-reservation', params: { id: showtimeId } })
+}
+
+// 跳转到编辑电影页面
+const goToEditMovie = () => {
+  router.push({ name: 'admin-update-movie', params: { id: route.params.id } })
 }
 
 onMounted(() => {

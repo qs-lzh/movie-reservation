@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 
@@ -38,14 +39,35 @@ func (s *movieService) CreateMovie(movie *model.Movie) error {
 	return nil
 }
 
-// don't change movie's title
+// Update movie by ID
 func (s *movieService) UpdateMovie(movie *model.Movie) error {
-	if _, err := s.repo.GetByTitle(movie.Title); err != nil {
+	// First, verify that the movie with this ID exists
+	existingMovie, err := s.repo.GetByID(uint(movie.ID))
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrNotFound
 		}
 		return err
 	}
+
+	fmt.Println(0)
+	// Optionally, check if the new title is already used by another movie (if title needs to be unique)
+	if existingMovie.Title != movie.Title {
+		anotherMovie, err := s.repo.GetByTitle(movie.Title)
+		if err == nil && anotherMovie != nil && anotherMovie.ID != movie.ID {
+			// Another movie with this title exists
+			return ErrAlreadyExists
+		}
+		// Check for record not found error - with new GORM generic API,
+		// we need to check both errors.Is and direct comparison
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) && err.Error() != "record not found" {
+			// Some other error occurred
+			return err
+		}
+	}
+
+	fmt.Println(1)
+
 	return s.repo.Update(*movie)
 }
 

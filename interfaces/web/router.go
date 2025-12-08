@@ -31,28 +31,25 @@ func InitRouter(app *app.App) *gin.Engine {
 	}
 
 	movies := r.Group("movies")
-	movies.Use(middleware.RequireAuth())
 	{
-		// [User] [Admin]
 		movies.GET("/", movieHandler.GetAllMovies)
 		movies.GET("/:id", movieHandler.GetMovieByID)
 		movies.GET("/:id/showtimes", movieHandler.GetMovieShowtimes)
 		// [Admin]
-		movies.POST("/", middleware.RequireAdmin(), movieHandler.CreateMovie)
-		movies.PUT("/:id", middleware.RequireAdmin(), movieHandler.UpdateMovie)
-		movies.DELETE("/:id", middleware.RequireAdmin(), movieHandler.DeleteMovie)
+		movies.POST("/", middleware.RequireAuth(), middleware.RequireAdmin(), movieHandler.CreateMovie)
+		movies.PUT("/:id", middleware.RequireAuth(), middleware.RequireAdmin(), movieHandler.UpdateMovie)
+		movies.DELETE("/:id", middleware.RequireAuth(), middleware.RequireAdmin(), movieHandler.DeleteMovie)
 	}
 
 	showtimes := r.Group("showtimes")
-	showtimes.Use(middleware.RequireAuth())
 	{
 		showtimes.GET("/", showtimeHandler.ListAllShowtimes)
 		showtimes.GET("/:id", showtimeHandler.GetShowtimeByID)
 		showtimes.GET("/:id/availability", showtimeHandler.GetShowtimeAvailability)
 		// [Admin]
-		showtimes.POST("/", middleware.RequireAdmin(), showtimeHandler.CreateShowtime)
-		showtimes.PUT("/:id", middleware.RequireAdmin(), showtimeHandler.UpdateShowtime)
-		showtimes.DELETE("/:id", middleware.RequireAdmin(), showtimeHandler.DeleteShowtimeByID)
+		showtimes.POST("/", middleware.RequireAuth(), middleware.RequireAdmin(), showtimeHandler.CreateShowtime)
+		showtimes.PUT("/:id", middleware.RequireAuth(), middleware.RequireAdmin(), showtimeHandler.UpdateShowtime)
+		showtimes.DELETE("/:id", middleware.RequireAuth(), middleware.RequireAdmin(), showtimeHandler.DeleteShowtimeByID)
 	}
 
 	reservations := r.Group("reservations")

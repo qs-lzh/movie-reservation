@@ -97,10 +97,10 @@ type Dot struct {
 
 func (s *captchaService) Verify(clickData []Dot, dotAnswerData map[int]*click.Dot) bool {
 
-	fmt.Println("start running captchaService.Verify......")
-	fmt.Println("0")
-	fmt.Printf("len of user: %d\n", len(clickData))
-	fmt.Printf("len of answer: %d\n", len(dotAnswerData))
+	// fmt.Println("start running captchaService.Verify......")
+	// fmt.Println("0")
+	// fmt.Printf("len of user: %d\n", len(clickData))
+	// fmt.Printf("len of answer: %d\n", len(dotAnswerData))
 	if len(clickData) != len(dotAnswerData) {
 		return false
 	}
@@ -109,12 +109,13 @@ func (s *captchaService) Verify(clickData []Dot, dotAnswerData map[int]*click.Do
 	// the key of dotAnswerData begin with 0
 	chkRet := false
 	for idx, dot := range clickData {
-		fmt.Printf("cycle: %d\n", idx)
-		fmt.Printf("userDot: {%d, %d}\n", dot.X, dot.Y)
+		// fmt.Printf("cycle: %d\n", idx)
+		// fmt.Printf("userDot: {%d, %d}\n", dot.X, dot.Y)
 		answerDot := dotAnswerData[idx]
-		fmt.Printf("answerDot: {%d, %d}\n", answerDot.X, answerDot.Y)
-		fmt.Printf("answerRec: {%d, %d}\n", answerDot.Width, answerDot.Height)
-		chkRet = click.Validate(dot.X, dot.Y, answerDot.X, answerDot.Y, answerDot.Width, answerDot.Height, 30)
+		// fmt.Printf("answerDot: {%d, %d}\n", answerDot.X, max(0, answerDot.Y-45))
+		// fmt.Printf("answerRec: {%d, %d}\n", answerDot.Width+10, answerDot.Height+10)
+		// noticing that the answerDot.Y is always larger, I subtract 30 from it
+		chkRet = click.Validate(dot.X, dot.Y, answerDot.X, max(0, answerDot.Y-45), answerDot.Width+10, answerDot.Height+10, 5)
 		if !chkRet {
 			fmt.Println(chkRet)
 			return false

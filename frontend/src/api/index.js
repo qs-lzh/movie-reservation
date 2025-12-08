@@ -8,13 +8,10 @@ const apiClient = axios.create({
   withCredentials: true // 允许携带cookies
 })
 
-// 添加请求拦截器，自动携带JWT
+// 请求拦截器不再需要设置Authorization header since we're using cookies
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
+    // We don't need to manually set headers since withCredentials: true will automatically include cookies
     return config
   },
   (error) => {
@@ -25,13 +22,14 @@ apiClient.interceptors.request.use(
 // 添加响应拦截器，处理JWT过期等
 apiClient.interceptors.response.use(
   (response) => {
+    // Check if the response contains a new JWT token in cookies
     return response
   },
   (error) => {
     if (error.response?.status === 401) {
-      // JWT过期或无效，清除本地token并跳转到登录页
-      localStorage.removeItem('token')
-      // 可以在这里触发登出事件或跳转到登录页
+      // JWT过期或无效，跳转到登录页
+      // Note: We don't need to manually remove token since it's in cookies
+      // The server will handle the cookie invalidation
     }
     return Promise.reject(error)
   }

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -136,6 +137,7 @@ func (h *MovieHandler) UpdateMovie(ctx *gin.Context) {
 	}
 
 	dto.Success(ctx, http.StatusOK, existingMovie)
+	fmt.Println("movie handler send success")
 }
 
 // @route DELETE /movies/:id
