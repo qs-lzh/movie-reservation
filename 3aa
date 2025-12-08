@@ -1,0 +1,39 @@
+   movie-reservation
+ ├╴  cmd
+ ├╴  config
+ ├╴  docs
+ ├╴  frontend
+ ├╴  interfaces
+ │ └╴  web
+ │   └╴  router.go
+ ├╴  internal
+ ├╴  node_modules
+ ├╴  test
+ ├╴  Makefile
+ ├╴  README.md
+ ├╴  backend_output.log
+ ├╴  go.mod
+ ├╴  go.sum
+ ├╴  package-lock.json
+ ├╴  package.json
+ └╴  server_logs.txt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

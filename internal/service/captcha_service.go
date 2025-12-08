@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"image"
-	"log"
 	"time"
 
 	"github.com/golang/freetype/truetype"
@@ -42,14 +41,13 @@ func (s *captchaService) Generate() (mBase64, tBase64, cacheKey string, err erro
 		click.WithRangeVerifyLen(option.RangeVal{Min: 2, Max: 4}),
 	)
 
-	// You can use preset material resources：https://github.com/wenlng/go-captcha-assets
 	fontN, err := fzshengsksjw.GetFont()
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to load font: %w", err)
+		return "", "", "", fmt.Errorf("Failed to load font: %w", err)
 	}
 	bgImage, err := imagesv2.GetImages()
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to load background images: %w", err)
+		return "", "", "", fmt.Errorf("Failed to load background images: %w", err)
 	}
 
 	builder.SetResources(
@@ -66,25 +64,24 @@ func (s *captchaService) Generate() (mBase64, tBase64, cacheKey string, err erro
 
 	captData, err := textCapt.Generate()
 	if err != nil {
-		return "", "", "", fmt.Errorf("failed to generate captcha: %w", err)
+		return "", "", "", fmt.Errorf("Failed to generate captcha: %w", err)
 	}
 
-	// Extract the answer data to store in cache (this should be serializable)
 	dotAnswerData := captData.GetData()
 	captchaID := uuid.New().String()
 
 	err = s.cache.Set(captchaID, dotAnswerData, 5*time.Minute)
 	if err != nil {
-		log.Printf("Warning: failed to save captcha answer to redis: %v", err)
+		return "", "", "", fmt.Errorf("Failed to save captcha answer to redis: %w", err)
 	}
 
 	mBase64, err = captData.GetMasterImage().ToBase64()
 	if err != nil {
-		fmt.Println(err)
+		return "", "", "", fmt.Errorf("Failed to get master image of captcha")
 	}
 	tBase64, err = captData.GetThumbImage().ToBase64()
 	if err != nil {
-		fmt.Println(err)
+		return "", "", "", fmt.Errorf("Failed to get thumb image of captcha")
 	}
 	return mBase64, tBase64, captchaID, nil
 }
@@ -97,10 +94,6 @@ type Dot struct {
 
 func (s *captchaService) Verify(clickData []Dot, dotAnswerData map[int]*click.Dot) bool {
 
-	// fmt.Println("start running captchaService.Verify......")
-	// fmt.Println("0")
-	// fmt.Printf("len of user: %d\n", len(clickData))
-	// fmt.Printf("len of answer: %d\n", len(dotAnswerData))
 	if len(clickData) != len(dotAnswerData) {
 		return false
 	}
@@ -109,15 +102,10 @@ func (s *captchaService) Verify(clickData []Dot, dotAnswerData map[int]*click.Do
 	// the key of dotAnswerData begin with 0
 	chkRet := false
 	for idx, dot := range clickData {
-		// fmt.Printf("cycle: %d\n", idx)
-		// fmt.Printf("userDot: {%d, %d}\n", dot.X, dot.Y)
 		answerDot := dotAnswerData[idx]
-		// fmt.Printf("answerDot: {%d, %d}\n", answerDot.X, max(0, answerDot.Y-45))
-		// fmt.Printf("answerRec: {%d, %d}\n", answerDot.Width+10, answerDot.Height+10)
-		// noticing that the answerDot.Y is always larger, I subtract 30 from it
+		// noticing that the answerDot.Y is always larger than actual, I subtract 30 from it
 		chkRet = click.Validate(dot.X, dot.Y, answerDot.X, max(0, answerDot.Y-45), answerDot.Width+10, answerDot.Height+10, 5)
 		if !chkRet {
-			fmt.Println(chkRet)
 			return false
 		}
 	}
