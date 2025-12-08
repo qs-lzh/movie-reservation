@@ -34,16 +34,19 @@ type RegisterRequest struct {
 func (h *AuthHandler) Register(ctx *gin.Context) {
 	var req RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid request body")
 		return
 	}
 
 	valid, err := h.App.Cache.GetBool(req.CacheKey)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get from cache")
 		return
 	}
 	if !valid {
+		ctx.Error(err)
 		dto.Unauthorized(ctx, "Captcha not passed")
 		return
 	}
@@ -51,10 +54,12 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 	// If the user want to register an admin account, need admin-role-password
 	if req.Role == model.RoleAdmin {
 		if req.AdminRolePassword == "" {
+			ctx.Error(err)
 			dto.BadRequest(ctx, "Invalid request body: need admin role password to register an admin")
 			return
 		}
 		if req.AdminRolePassword != h.App.Config.AdminRolePassword {
+			ctx.Error(err)
 			dto.Unauthorized(ctx, "You do not have the permission to register an admin account: Wrong admin role password")
 			return
 		}
@@ -62,9 +67,11 @@ func (h *AuthHandler) Register(ctx *gin.Context) {
 
 	if err := h.App.UserService.CreateUser(req.UserName, req.Password, req.Role); err != nil {
 		if errors.Is(err, service.ErrAlreadyExists) {
+			ctx.Error(err)
 			dto.Conflict(ctx, "USER_CONFLICTS", fmt.Sprintf("User named %s already exists", req.UserName))
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to create user")
 		return
 	}
@@ -81,21 +88,25 @@ type LoginRequest struct {
 func (h *AuthHandler) Login(ctx *gin.Context) {
 	var req LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid request body")
 		return
 	}
 
 	valid, err := h.App.Cache.GetBool(req.CacheKey)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get from cache")
 		return
 	}
 	if !valid {
+		ctx.Error(err)
 		dto.Unauthorized(ctx, "Captcha not passed")
 		return
 	}
 	tokenStr, err := h.App.AuthService.Login(req.UserName, req.Password, req.CacheKey)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to login")
 		return
 	}
@@ -105,6 +116,7 @@ func (h *AuthHandler) Login(ctx *gin.Context) {
 	// Get user role to return in response
 	userRole, err := h.App.UserService.GetUserRoleByName(req.UserName)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get user role")
 		return
 	}

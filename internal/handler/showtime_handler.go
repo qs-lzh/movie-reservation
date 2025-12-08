@@ -33,6 +33,7 @@ type CreateShowtimeRequest struct {
 func (h *ShowtimeHandler) ListAllShowtimes(ctx *gin.Context) {
 	showtimes, err := h.App.ShowtimeService.GetAllShowtimes()
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get showtimes")
 		return
 	}
@@ -44,12 +45,14 @@ func (h *ShowtimeHandler) ListAllShowtimes(ctx *gin.Context) {
 func (h *ShowtimeHandler) CreateShowtime(ctx *gin.Context) {
 	var req CreateShowtimeRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid request body")
 		return
 	}
 
 	err := h.App.ShowtimeService.CreateShowtime(req.MovieID, req.StartAt, req.HallID)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to create showtime")
 		return
 	}
@@ -67,18 +70,21 @@ func (h *ShowtimeHandler) UpdateShowtime(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid showtime id")
 		return
 	}
 
 	var req UpdateShowtimeRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid request body")
 		return
 	}
 
 	// Validate that at least one field is provided for update
 	if req.StartAt.IsZero() && req.HallID == 0 {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "At least one field (start_at or hall_id) must be provided for update")
 		return
 	}
@@ -86,9 +92,11 @@ func (h *ShowtimeHandler) UpdateShowtime(ctx *gin.Context) {
 	err = h.App.ShowtimeService.UpdateShowtime(uint(id), req.StartAt, req.HallID)
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
+			ctx.Error(err)
 			dto.NotFound(ctx, "Showtime not exists")
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to update showtime")
 		return
 	}
@@ -101,6 +109,7 @@ func (h *ShowtimeHandler) DeleteShowtimeByID(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid showtime id")
 		return
 	}
@@ -108,9 +117,11 @@ func (h *ShowtimeHandler) DeleteShowtimeByID(ctx *gin.Context) {
 	err = h.App.ShowtimeService.DeleteShowtimeByID(uint(id))
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
+			ctx.Error(err)
 			dto.NotFound(ctx, "Showtime not exists")
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to delete showtime")
 		return
 	}
@@ -123,15 +134,18 @@ func (h *ShowtimeHandler) GetShowtimeByID(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid showtime id")
 		return
 	}
 	showtime, err := h.App.ShowtimeService.GetShowtimeByID(uint(id))
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
+			ctx.Error(err)
 			dto.NotFound(ctx, "Showtime not exists")
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get showtime")
 		return
 	}
@@ -143,15 +157,18 @@ func (h *ShowtimeHandler) GetShowtimeAvailability(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid showtime id")
 		return
 	}
 	remainingTickets, err := h.App.ReservationService.GetRemainingTickets(uint(id))
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
+			ctx.Error(err)
 			dto.NotFound(ctx, "Showtime not exists")
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get showtime availability")
 		return
 	}

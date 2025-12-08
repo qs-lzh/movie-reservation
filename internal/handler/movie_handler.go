@@ -28,6 +28,7 @@ func NewMovieHandler(app *app.App) *MovieHandler {
 func (h *MovieHandler) GetAllMovies(ctx *gin.Context) {
 	movies, err := h.App.MovieService.GetAllMovies()
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get all movies")
 		return
 	}
@@ -39,15 +40,18 @@ func (h *MovieHandler) GetMovieByID(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid movie id")
 		return
 	}
 	movie, err := h.App.MovieService.GetMovieByID(uint(id))
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
+			ctx.Error(err)
 			dto.NotFound(ctx, "Movie not exists")
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get movie")
 		return
 	}
@@ -58,11 +62,13 @@ func (h *MovieHandler) GetMovieShowtimes(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	movieID, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid movie id")
 		return
 	}
 	showtimes, err := h.App.ShowtimeService.GetShowtimesByMovieID(uint(movieID))
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get showtimes")
 		return
 	}
@@ -78,6 +84,7 @@ type CreateMovieRequest struct {
 func (h *MovieHandler) CreateMovie(ctx *gin.Context) {
 	var req CreateMovieRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid request body")
 		return
 	}
@@ -89,6 +96,7 @@ func (h *MovieHandler) CreateMovie(ctx *gin.Context) {
 
 	err := h.App.MovieService.CreateMovie(movie)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to create movie")
 		return
 	}
@@ -106,12 +114,14 @@ func (h *MovieHandler) UpdateMovie(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid movie id")
 		return
 	}
 
 	var req UpdateMovieRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid request body")
 		return
 	}
@@ -120,9 +130,11 @@ func (h *MovieHandler) UpdateMovie(ctx *gin.Context) {
 	existingMovie, err := h.App.MovieService.GetMovieByID(uint(id))
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
+			ctx.Error(err)
 			dto.NotFound(ctx, "Movie not exists")
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to get movie")
 		return
 	}
@@ -132,6 +144,7 @@ func (h *MovieHandler) UpdateMovie(ctx *gin.Context) {
 
 	err = h.App.MovieService.UpdateMovie(existingMovie)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to update movie")
 		return
 	}
@@ -145,6 +158,7 @@ func (h *MovieHandler) DeleteMovie(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	id, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid movie id")
 		return
 	}
@@ -152,9 +166,11 @@ func (h *MovieHandler) DeleteMovie(ctx *gin.Context) {
 	err = h.App.MovieService.DeleteMovieByID(uint(id))
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
+			ctx.Error(err)
 			dto.NotFound(ctx, "Movie not exists")
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to delete movie")
 		return
 	}

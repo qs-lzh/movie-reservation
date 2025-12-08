@@ -45,7 +45,10 @@ func main() {
 	router := web.InitRouter(app)
 
 	if err := router.RunTLS(cfg.Addr, cfg.CertPath, cfg.KeyPath); err != nil {
-		log.Fatal(err)
+		app.Logger.Fatal("Failed to start http server",
+			zap.String("addr", cfg.Addr),
+			zap.String("cert", cfg.CertPath),
+		)
 	}
 }
 

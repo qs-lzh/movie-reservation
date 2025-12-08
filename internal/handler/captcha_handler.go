@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 
 	"github.com/qs-lzh/movie-reservation/internal/app"
@@ -23,6 +21,7 @@ func NewCaptchaHandler(app *app.App) *CaptchaHandler {
 func (h *CaptchaHandler) GenerateCaptcha(ctx *gin.Context) {
 	mBase64, tBase64, cacheKey, err := h.App.CaptchaService.Generate()
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to generate captcha")
 		return
 	}
@@ -34,7 +33,6 @@ func (h *CaptchaHandler) GenerateCaptcha(ctx *gin.Context) {
 }
 
 func (h *CaptchaHandler) VerifyCaptcha(ctx *gin.Context) {
-	fmt.Println("start running captchaHandler.VerifyCaptcha......")
 	type CaptchaVerifyRequest struct {
 		Dots []service.Dot `json:"dots" binding:"required"`
 		Key  string        `json:"key" binding:"required"`
@@ -42,17 +40,20 @@ func (h *CaptchaHandler) VerifyCaptcha(ctx *gin.Context) {
 
 	var req CaptchaVerifyRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid request body: "+err.Error())
 		return
 	}
 
 	valid, err := h.App.CaptchaService.VerifyWithKey(req.Dots, req.Key)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to verify captcha: "+err.Error())
 		return
 	}
 
 	if err := h.App.Cache.SetBool(req.Key, valid); err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to set bool in cache")
 		return
 	}

@@ -22,6 +22,8 @@ func NewReservationHandler(app *app.App) *ReservationHandler {
 	}
 }
 
+var ErrUnauthorized = errors.New("Unauthorized")
+
 func getUserIDFromContext(ctx *gin.Context) (uint, error) {
 	userID, exists := ctx.Get("user_id")
 	if !exists {
@@ -38,12 +40,14 @@ type CreateReservationRequest struct {
 func (h *ReservationHandler) CreateReservation(ctx *gin.Context) {
 	userID, err := getUserIDFromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
 		dto.Unauthorized(ctx, "User not authenticated")
 		return
 	}
 
 	var req CreateReservationRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid request body")
 		return
 	}
@@ -52,12 +56,16 @@ func (h *ReservationHandler) CreateReservation(ctx *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrShowtimeNotExist):
+			ctx.Error(err)
 			dto.NotFound(ctx, "Showtime not found")
 		case errors.Is(err, service.ErrNoTicketsAvailable):
+			ctx.Error(err)
 			dto.Conflict(ctx, "NO_TICKETS", "No tickets available")
 		case errors.Is(err, service.ErrAlreadyReserved):
+			ctx.Error(err)
 			dto.Conflict(ctx, "ALREADY_RESERVED", "You have already reserved this showtime")
 		default:
+			ctx.Error(err)
 			dto.InternalServerError(ctx, "Failed to create reservation")
 		}
 		return
@@ -70,12 +78,14 @@ func (h *ReservationHandler) CreateReservation(ctx *gin.Context) {
 func (h *ReservationHandler) GetMyReservations(ctx *gin.Context) {
 	userID, err := getUserIDFromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
 		dto.Unauthorized(ctx, "User not authenticated")
 		return
 	}
 
 	reservations, err := h.App.ReservationService.GetReservationsByUserID(userID)
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to retrieve reservations")
 		return
 	}
@@ -87,6 +97,7 @@ func (h *ReservationHandler) GetMyReservations(ctx *gin.Context) {
 func (h *ReservationHandler) CancelReservation(ctx *gin.Context) {
 	userID, err := getUserIDFromContext(ctx)
 	if err != nil {
+		ctx.Error(err)
 		dto.Unauthorized(ctx, "User not authenticated")
 		return
 	}
@@ -94,6 +105,7 @@ func (h *ReservationHandler) CancelReservation(ctx *gin.Context) {
 	idParam := ctx.Param("id")
 	reservationID, err := strconv.ParseUint(idParam, 10, 32)
 	if err != nil {
+		ctx.Error(err)
 		dto.BadRequest(ctx, "Invalid reservation ID")
 		return
 	}
@@ -102,14 +114,17 @@ func (h *ReservationHandler) CancelReservation(ctx *gin.Context) {
 	reservation, err := h.App.ReservationService.GetReservationByID(uint(reservationID))
 	if err != nil {
 		if errors.Is(err, service.ErrNotFound) {
+			ctx.Error(err)
 			dto.NotFound(ctx, "Reservation not found")
 			return
 		}
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to retrieve reservation")
 		return
 	}
 
 	if reservation.UserID != userID {
+		ctx.Error(err)
 		dto.Forbidden(ctx, "You are not allowed to cancel this reservation")
 		return
 	}
@@ -117,6 +132,7 @@ func (h *ReservationHandler) CancelReservation(ctx *gin.Context) {
 	// Cancel the reservation
 	err = h.App.ReservationService.CancelReservation(uint(reservationID))
 	if err != nil {
+		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to cancel reservation")
 		return
 	}

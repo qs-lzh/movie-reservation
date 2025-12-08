@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/qs-lzh/movie-reservation/internal/model"

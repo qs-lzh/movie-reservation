@@ -23,12 +23,12 @@ type CaptchaService interface {
 }
 
 type captchaService struct {
-	Cache *cache.RedisCache
+	cache *cache.RedisCache
 }
 
 func NewCaptchaService(cache *cache.RedisCache) *captchaService {
 	return &captchaService{
-		Cache: cache,
+		cache: cache,
 	}
 }
 
@@ -73,7 +73,7 @@ func (s *captchaService) Generate() (mBase64, tBase64, cacheKey string, err erro
 	dotAnswerData := captData.GetData()
 	captchaID := uuid.New().String()
 
-	err = s.Cache.Set(captchaID, dotAnswerData, 5*time.Minute)
+	err = s.cache.Set(captchaID, dotAnswerData, 5*time.Minute)
 	if err != nil {
 		log.Printf("Warning: failed to save captcha answer to redis: %v", err)
 	}
@@ -126,7 +126,7 @@ func (s *captchaService) Verify(clickData []Dot, dotAnswerData map[int]*click.Do
 
 func (s *captchaService) VerifyWithKey(clickData []Dot, cacheKey string) (bool, error) {
 	dotAnswerData := make(map[int]*click.Dot)
-	if err := s.Cache.Get(cacheKey, &dotAnswerData); err != nil {
+	if err := s.cache.Get(cacheKey, &dotAnswerData); err != nil {
 		return false, fmt.Errorf("failed to get captcha answer data from cache: %v", err)
 	}
 

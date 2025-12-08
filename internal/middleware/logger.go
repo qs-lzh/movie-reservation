@@ -29,3 +29,20 @@ func ZapLogger(zapLogger *zap.Logger) gin.HandlerFunc {
 		)
 	}
 }
+
+func ErrorLogger(zapLogger *zap.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+
+		if len(c.Errors) == 0 {
+			return
+		}
+		for _, e := range c.Errors {
+			zapLogger.Error("http request error",
+				zap.Error(e.Err),
+				zap.String("path", c.Request.URL.Path),
+				zap.String("method", c.Request.Method),
+			)
+		}
+	}
+}
