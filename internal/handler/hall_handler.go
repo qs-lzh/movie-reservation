@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -73,14 +74,20 @@ func (h *HallHandler) CreateHall(ctx *gin.Context) {
 		return
 	}
 
-	hall := &model.Hall{
+	hall, err := h.App.HallService.GetHallByName(req.Name)
+	if err == nil && hall != nil {
+		dto.Conflict(ctx, "HALL_EXISTS", fmt.Sprintf("Hall %s already exists", req.Name))
+		return
+	}
+
+	hall = &model.Hall{
 		Name:      req.Name,
 		SeatCount: req.SeatCount,
 		Rows:      req.Rows,
 		Cols:      req.Cols,
 	}
 
-	err := h.App.HallService.CreateHall(hall)
+	err = h.App.HallService.CreateHall(hall)
 	if err != nil {
 		ctx.Error(err)
 		dto.InternalServerError(ctx, "Failed to create hall")

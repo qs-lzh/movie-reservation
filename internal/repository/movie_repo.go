@@ -31,7 +31,6 @@ func NewMovieRepoGorm(db *gorm.DB) *movieRepoGorm {
 
 func (r *movieRepoGorm) Create(movie *model.Movie) error {
 	ctx := context.Background()
-	context.Background()
 	if err := gorm.G[model.Movie](r.db).Create(ctx, movie); err != nil {
 		return err
 	}

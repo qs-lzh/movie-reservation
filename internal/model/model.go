@@ -48,3 +48,10 @@ type Hall struct {
 	Rows      int    `gorm:"not null" json:"rows"`
 	Cols      int    `gorm:"not null" json:"cols"`
 }
+
+type Seat struct {
+	ID     uint `gorm:"primaryKey" json:"id"`
+	HallID uint `gorm:"not null" json:"hall_id"`
+	Row    int  `gorm:"not null" json:"row"`
+	Col    int  `gorm:"not null" json:"col"`
+}

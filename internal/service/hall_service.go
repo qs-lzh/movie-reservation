@@ -13,6 +13,7 @@ type HallService interface {
 	UpdateHall(hall *model.Hall) error
 	DeleteHallByID(id uint) error
 	GetHallByID(id uint) (*model.Hall, error)
+	GetHallByName(name string) (*model.Hall, error)
 	GetAllHalls() ([]model.Hall, error)
 }
 
@@ -72,6 +73,17 @@ func (s *hallService) DeleteHallByID(id uint) error {
 
 func (s *hallService) GetHallByID(id uint) (*model.Hall, error) {
 	hall, err := s.repo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return hall, nil
+}
+
+func (s *hallService) GetHallByName(name string) (*model.Hall, error) {
+	hall, err := s.repo.GetByName(name)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrNotFound

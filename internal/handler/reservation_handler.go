@@ -24,14 +24,6 @@ func NewReservationHandler(app *app.App) *ReservationHandler {
 
 var ErrUnauthorized = errors.New("Unauthorized")
 
-func getUserIDFromContext(ctx *gin.Context) (uint, error) {
-	userID, exists := ctx.Get("user_id")
-	if !exists {
-		return 0, errors.New("unauthorized")
-	}
-	return userID.(uint), nil
-}
-
 type CreateReservationRequest struct {
 	ShowtimeID uint `json:"showtime_id" binding:"required"`
 }
@@ -92,6 +84,14 @@ func (h *ReservationHandler) GetMyReservations(ctx *gin.Context) {
 	}
 
 	dto.Success(ctx, http.StatusOK, reservations)
+}
+
+func getUserIDFromContext(ctx *gin.Context) (uint, error) {
+	userID, exists := ctx.Get("user_id")
+	if !exists {
+		return 0, errors.New("unauthorized")
+	}
+	return userID.(uint), nil
 }
 
 // @route DELETE /reservations/:id
