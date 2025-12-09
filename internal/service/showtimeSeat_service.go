@@ -10,22 +10,26 @@ import (
 
 type ShowtimeSeatService interface {
 	CreateShowtimeSeat(showtimeSeat *model.ShowtimeSeat) error
+	InitShowtimeSeatsForShowtime(showtime *model.Showtime) error
 	GetShowtimeSeatByID(id uint) (*model.ShowtimeSeat, error)
-	GetShowtimeSeatByShowtimeID(showtimdID uint) ([]model.ShowtimeSeat, error)
-	GetShowtimeSeatByStatus(status model.ShowtimeSeatStatus) ([]model.ShowtimeSeat, error)
+	GetShowtimeSeatByShowtimeIDSeatID(showtimeID, seatID uint) (*model.ShowtimeSeat, error)
+	GetShowtimeSeatsByShowtimeID(showtimdID uint) ([]model.ShowtimeSeat, error)
+	GetShowtimeSeatsByStatus(status model.ShowtimeSeatStatus) ([]model.ShowtimeSeat, error)
 	UpdateShowtimeSeatStatus(id uint, targetStatus model.ShowtimeSeatStatus) error
 	DeleteShowtimeSeatByID(id uint) error
 }
 
 type showtimeSeatService struct {
-	db   *gorm.DB
-	repo repository.ShowtimeSeatRepo
+	db          *gorm.DB
+	repo        repository.ShowtimeSeatRepo
+	seatService SeatService
 }
 
-func NewshowtimeSeatService(db *gorm.DB) *showtimeSeatService {
+func NewShowtimeSeatService(db *gorm.DB, showtimeSeatRepo repository.ShowtimeSeatRepo, seatService SeatService) *showtimeSeatService {
 	return &showtimeSeatService{
-		db:   db,
-		repo: repository.NewshowtimeSeatRepoGorm(db),
+		db:          db,
+		repo:        showtimeSeatRepo,
+		seatService: seatService,
 	}
 }
 
@@ -36,6 +40,23 @@ func (s *showtimeSeatService) CreateShowtimeSeat(showtimeSeat *model.ShowtimeSea
 		return err
 	}
 	return nil
+}
+
+func (s *showtimeSeatService) InitShowtimeSeatsForShowtime(showtime *model.Showtime) error {
+	hallID := showtime.HallID
+	seats, err := s.seatService.GetSeatsByHallID(hallID)
+	if err != nil {
+		return err
+	}
+	var showtimeSeats []model.ShowtimeSeat
+	for _, seat := range seats {
+		showtimeSeats = append(showtimeSeats, model.ShowtimeSeat{
+			ShowtimeID: showtime.ID,
+			SeatID:     seat.ID,
+			Status:     model.StatusAvailable,
+		})
+	}
+	return s.repo.CreateBatch(showtimeSeats)
 }
 
 func (s *showtimeSeatService) GetShowtimeSeatByID(id uint) (*model.ShowtimeSeat, error) {
@@ -49,11 +70,19 @@ func (s *showtimeSeatService) GetShowtimeSeatByID(id uint) (*model.ShowtimeSeat,
 	return showtimeSeat, nil
 }
 
-func (s *showtimeSeatService) GetShowtimeSeatByShowtimeID(showtimeID uint) ([]model.ShowtimeSeat, error) {
+func (s *showtimeSeatService) GetShowtimeSeatByShowtimeIDSeatID(showtimeID, seatID uint) (*model.ShowtimeSeat, error) {
+	showtimeSeat, err := s.repo.GetByShowIDSeatID(showtimeID, seatID)
+	if err != nil {
+		return nil, err
+	}
+	return showtimeSeat, nil
+}
+
+func (s *showtimeSeatService) GetShowtimeSeatsByShowtimeID(showtimeID uint) ([]model.ShowtimeSeat, error) {
 	return s.repo.GetByShowtimeID(showtimeID)
 }
 
-func (s *showtimeSeatService) GetShowtimeSeatByStatus(status model.ShowtimeSeatStatus) ([]model.ShowtimeSeat, error) {
+func (s *showtimeSeatService) GetShowtimeSeatsByStatus(status model.ShowtimeSeatStatus) ([]model.ShowtimeSeat, error) {
 	return s.repo.GetByStatus(status)
 }
 

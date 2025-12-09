@@ -11,6 +11,7 @@ import (
 
 type SeatService interface {
 	CreateSeat(seat *model.Seat) error
+	InitSeatsForHall(hall *model.Hall) error
 	GetSeatByID(id uint) (*model.Seat, error)
 	GetSeatsByHallID(hallID uint) ([]model.Seat, error)
 	DeleteSeatByID(id uint) error
@@ -21,10 +22,10 @@ type seatService struct {
 	repo repository.SeatRepo
 }
 
-func NewseatService(db *gorm.DB) *seatService {
+func NewseatService(db *gorm.DB, seatRepo repository.SeatRepo) *seatService {
 	return &seatService{
 		db:   db,
-		repo: repository.NewSeatRepoGorm(db),
+		repo: seatRepo,
 	}
 }
 
@@ -32,6 +33,25 @@ var _ SeatService = (*seatService)(nil)
 
 func (s *seatService) CreateSeat(seat *model.Seat) error {
 	if err := s.repo.Create(seat); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *seatService) InitSeatsForHall(hall *model.Hall) error {
+	hallID := hall.ID
+	rows, cols := hall.Rows, hall.Cols
+	var seats []model.Seat
+	for row := range rows {
+		for col := range cols {
+			seats = append(seats, model.Seat{
+				HallID: hallID,
+				Row:    row,
+				Col:    col,
+			})
+		}
+	}
+	if err := s.repo.CreateBatch(seats); err != nil {
 		return err
 	}
 	return nil

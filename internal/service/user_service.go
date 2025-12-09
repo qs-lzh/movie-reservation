@@ -26,10 +26,10 @@ type userService struct {
 
 var _ UserService = (*userService)(nil)
 
-func NewUserService(db *gorm.DB) *userService {
+func NewUserService(db *gorm.DB, userRepo repository.UserRepo) *userService {
 	return &userService{
 		db:     db,
-		repo:   repository.NewUserRepoGorm(db),
+		repo:   userRepo,
 		hasher: security.NewBcryptHasher(10),
 	}
 }

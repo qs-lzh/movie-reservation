@@ -41,7 +41,7 @@ func (r *showtimeRepoGorm) GetByID(id uint) (*model.Showtime, error) {
 	ctx := context.Background()
 	showtime, err := gorm.G[model.Showtime](r.db).Where(&model.Showtime{ID: id}).First(ctx)
 	if err != nil {
-		return &model.Showtime{}, err
+		return nil, err
 	}
 	return &showtime, nil
 }

@@ -10,6 +10,7 @@ import (
 
 type SeatRepo interface {
 	Create(seat *model.Seat) error
+	CreateBatch(seats []model.Seat) error
 	GetByID(id uint) (*model.Seat, error)
 	GetByHallID(hallID uint) ([]model.Seat, error)
 	DeleteByID(id uint) error
@@ -30,6 +31,14 @@ func NewSeatRepoGorm(db *gorm.DB) *seatRepoGorm {
 func (r *seatRepoGorm) Create(seat *model.Seat) error {
 	ctx := context.Background()
 	if err := gorm.G[model.Seat](r.db).Create(ctx, seat); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *seatRepoGorm) CreateBatch(seats []model.Seat) error {
+	ctx := context.Background()
+	if err := gorm.G[model.Seat](r.db).CreateInBatches(ctx, &seats, len(seats)); err != nil {
 		return err
 	}
 	return nil

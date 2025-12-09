@@ -19,10 +19,9 @@ const (
 )
 
 type Movie struct {
-	ID          uint       `gorm:"primaryKey" json:"id"`
-	Title       string     `gorm:"type:varchar(100);not null" json:"title"`
-	Description string     `gorm:"type:text" json:"description"`
-	Showtimes   []Showtime `gorm:"foreignKey:MovieID" json:"showtimes"`
+	ID          uint   `gorm:"primaryKey" json:"id"`
+	Title       string `gorm:"type:varchar(100);not null" json:"title"`
+	Description string `gorm:"type:text" json:"description"`
 }
 
 type Showtime struct {
@@ -35,6 +34,7 @@ type Showtime struct {
 type Reservation struct {
 	ID         uint `gorm:"primaryKey" json:"id"`
 	ShowtimeID uint `gorm:"not null" json:"showtime_id"`
+	SeatID     uint `gorm:"not null" json:"seat_id"`
 	UserID     uint `gorm:"not null" json:"user_id"`
 }
 

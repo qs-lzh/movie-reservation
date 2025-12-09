@@ -3,10 +3,9 @@ package service
 import (
 	"errors"
 
-	"gorm.io/gorm"
-
 	"github.com/qs-lzh/movie-reservation/internal/model"
 	"github.com/qs-lzh/movie-reservation/internal/repository"
+	"gorm.io/gorm"
 )
 
 type MovieService interface {
@@ -19,16 +18,18 @@ type MovieService interface {
 }
 
 type movieService struct {
-	db   *gorm.DB
-	repo repository.MovieRepo
+	db                  *gorm.DB
+	repo                repository.MovieRepo
+	showtimeSeatService ShowtimeSeatService
 }
 
 var _ MovieService = (*movieService)(nil)
 
-func NewMovieService(db *gorm.DB) *movieService {
+func NewMovieService(db *gorm.DB, movieRepo repository.MovieRepo, showtimeSeatService ShowtimeSeatService) *movieService {
 	return &movieService{
-		db:   db,
-		repo: repository.NewMovieRepoGorm(db),
+		db:                  db,
+		repo:                movieRepo,
+		showtimeSeatService: showtimeSeatService,
 	}
 }
 

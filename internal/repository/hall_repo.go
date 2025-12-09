@@ -13,7 +13,7 @@ type HallRepo interface {
 	GetByName(name string) (*model.Hall, error)
 	DeleteByID(id uint) error
 	ListAll() ([]model.Hall, error)
-	Update(model.Hall) error
+	Update(*model.Hall) error
 }
 
 type hallRepoGorm struct {
@@ -74,9 +74,9 @@ func (r *hallRepoGorm) ListAll() ([]model.Hall, error) {
 }
 
 // before use Update, please confirm the existance of the hall
-func (r *hallRepoGorm) Update(hall model.Hall) error {
+func (r *hallRepoGorm) Update(hall *model.Hall) error {
 	ctx := context.Background()
-	if _, err := gorm.G[model.Hall](r.db).Updates(ctx, hall); err != nil {
+	if _, err := gorm.G[model.Hall](r.db).Updates(ctx, *hall); err != nil {
 		return err
 	}
 	return nil

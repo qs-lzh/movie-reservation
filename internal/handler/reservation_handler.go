@@ -26,6 +26,7 @@ var ErrUnauthorized = errors.New("Unauthorized")
 
 type CreateReservationRequest struct {
 	ShowtimeID uint `json:"showtime_id" binding:"required"`
+	SeatID     uint `json:"seat_id" binding:"required"`
 }
 
 // @route POST /reservations
@@ -45,7 +46,7 @@ func (h *ReservationHandler) CreateReservation(ctx *gin.Context) {
 		return
 	}
 
-	err := h.App.ReservationService.Reserve(userID, req.ShowtimeID)
+	err := h.App.ReservationService.Reserve(userID, req.ShowtimeID, req.SeatID)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrShowtimeNotExist):

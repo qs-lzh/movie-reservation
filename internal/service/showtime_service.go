@@ -20,16 +20,18 @@ type ShowtimeService interface {
 }
 
 type showtimeService struct {
-	db   *gorm.DB
-	repo repository.ShowtimeRepo
+	db                  *gorm.DB
+	repo                repository.ShowtimeRepo
+	showtimeSeatService ShowtimeSeatService
 }
 
 var _ ShowtimeService = (*showtimeService)(nil)
 
-func NewShowtimeService(db *gorm.DB) *showtimeService {
+func NewShowtimeService(db *gorm.DB, showtimeRepo repository.ShowtimeRepo, showtimeSeatService ShowtimeSeatService) *showtimeService {
 	return &showtimeService{
-		db:   db,
-		repo: repository.NewShowtimeRepoGorm(db),
+		db:                  db,
+		repo:                showtimeRepo,
+		showtimeSeatService: showtimeSeatService,
 	}
 }
 
@@ -42,10 +44,13 @@ func (s *showtimeService) CreateShowtime(movieID uint, startTime time.Time, hall
 	if err := s.repo.Create(showtime); err != nil {
 		return err
 	}
-	return nil
+
+	return s.showtimeSeatService.InitShowtimeSeatsForShowtime(showtime)
 }
 
 func (s *showtimeService) UpdateShowtime(showtimeID uint, startTime time.Time, hallID uint) error {
+	// NOTE: Ensure no related ShowtimeSeat
+
 	showtime, err := s.repo.GetByID(uint(showtimeID))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -66,6 +71,8 @@ func (s *showtimeService) UpdateShowtime(showtimeID uint, startTime time.Time, h
 }
 
 func (s *showtimeService) DeleteShowtimeByID(showtimeID uint) error {
+	// NOTE: Ensure no related showtimeSeat
+
 	if err := s.repo.DeleteByID(uint(showtimeID)); err != nil {
 		return err
 	}

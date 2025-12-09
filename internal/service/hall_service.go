@@ -18,16 +18,18 @@ type HallService interface {
 }
 
 type hallService struct {
-	db   *gorm.DB
-	repo repository.HallRepo
+	db          *gorm.DB
+	repo        repository.HallRepo
+	seatService SeatService
 }
 
 var _ HallService = (*hallService)(nil)
 
-func NewHallService(db *gorm.DB) *hallService {
+func NewHallService(db *gorm.DB, hallRepo repository.HallRepo, seatService SeatService) *hallService {
 	return &hallService{
-		db:   db,
-		repo: repository.NewHallRepoGorm(db),
+		db:          db,
+		repo:        hallRepo,
+		seatService: seatService,
 	}
 }
 
@@ -35,12 +37,13 @@ func (s *hallService) CreateHall(hall *model.Hall) error {
 	if err := s.repo.Create(hall); err != nil {
 		return err
 	}
-	return nil
+	return s.seatService.InitSeatsForHall(hall)
 }
 
-// Update hall by ID
 func (s *hallService) UpdateHall(hall *model.Hall) error {
-	// First, verify that the hall with this ID exists
+	// NOTE: Ensure no related Seat and ShowtimeSeat
+
+	// Verify that the hall with this ID exists
 	existinghall, err := s.repo.GetByID(uint(hall.ID))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -61,10 +64,12 @@ func (s *hallService) UpdateHall(hall *model.Hall) error {
 		}
 	}
 
-	return s.repo.Update(*hall)
+	return s.repo.Update(hall)
 }
 
 func (s *hallService) DeleteHallByID(id uint) error {
+	// NOTE: Ensure no related Showtime and Seat and ShowtimeSeat
+
 	if err := s.repo.DeleteByID(id); err != nil {
 		return err
 	}
