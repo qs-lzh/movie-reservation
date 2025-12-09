@@ -16,29 +16,31 @@ type App struct {
 	Cache  *cache.RedisCache
 	Logger *zap.Logger
 
-	UserService        service.UserService
-	MovieService       service.MovieService
-	ShowtimeService    service.ShowtimeService
-	ReservationService service.ReservationService
-	HallService        service.HallService
-	AuthService        service.AuthService
-	CaptchaService     service.CaptchaService
+	UserService         service.UserService
+	MovieService        service.MovieService
+	ShowtimeService     service.ShowtimeService
+	ReservationService  service.ReservationService
+	HallService         service.HallService
+	ShowtimeSeatService service.ShowtimeSeatService
+	AuthService         service.AuthService
+	CaptchaService      service.CaptchaService
 }
 
 func New(config *config.Config, db *gorm.DB, cache *cache.RedisCache, logger *zap.Logger) *App {
 	userService := service.NewUserService(db)
 	return &App{
-		Config:             config,
-		DB:                 db,
-		Cache:              cache,
-		Logger:             logger,
-		UserService:        userService,
-		MovieService:       service.NewMovieService(db),
-		ShowtimeService:    service.NewShowtimeService(db),
-		ReservationService: service.NewReservationService(db),
-		HallService:        service.NewHallService(db),
-		AuthService:        service.NewJWTAuthService(userService),
-		CaptchaService:     service.NewCaptchaService(cache),
+		Config:              config,
+		DB:                  db,
+		Cache:               cache,
+		Logger:              logger,
+		UserService:         userService,
+		MovieService:        service.NewMovieService(db),
+		ShowtimeService:     service.NewShowtimeService(db),
+		ReservationService:  service.NewReservationService(db),
+		HallService:         service.NewHallService(db),
+		ShowtimeSeatService: service.NewshowtimeSeatService(db),
+		AuthService:         service.NewJWTAuthService(userService),
+		CaptchaService:      service.NewCaptchaService(cache),
 	}
 }
 

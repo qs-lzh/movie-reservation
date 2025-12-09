@@ -66,10 +66,7 @@ func (s *movieService) UpdateMovie(movie *model.Movie) error {
 }
 
 func (s *movieService) DeleteMovieByID(id uint) error {
-	if err := s.repo.DeleteByID(id); err != nil {
-		return err
-	}
-	return nil
+	return s.repo.DeleteByID(id)
 }
 
 func (s *movieService) GetMovieByID(id uint) (*model.Movie, error) {

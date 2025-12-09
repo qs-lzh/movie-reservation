@@ -55,3 +55,18 @@ type Seat struct {
 	Row    int  `gorm:"not null" json:"row"`
 	Col    int  `gorm:"not null" json:"col"`
 }
+
+type ShowtimeSeatStatus string
+
+const (
+	StatusAvailable ShowtimeSeatStatus = "available"
+	StatusLocked    ShowtimeSeatStatus = "locked"
+	StatusSold      ShowtimeSeatStatus = "sold"
+)
+
+type ShowtimeSeat struct {
+	ID         uint               `gorm:"primaryKey" json:"id"`
+	ShowtimeID uint               `gorm:"not null" json:"showtime_id"`
+	SeatID     uint               `gorm:"not null" json:"seat_id"`
+	Status     ShowtimeSeatStatus `gorm:"not null" json:"status"`
+}
