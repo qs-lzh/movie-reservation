@@ -8,6 +8,7 @@ import (
 )
 
 type HallRepo interface {
+	WithTx(tx *gorm.DB) HallRepo
 	Create(hall *model.Hall) error
 	GetByID(id uint) (*model.Hall, error)
 	GetByName(name string) (*model.Hall, error)
@@ -21,6 +22,12 @@ type hallRepoGorm struct {
 }
 
 var _ HallRepo = (*hallRepoGorm)(nil)
+
+func (r *hallRepoGorm) WithTx(tx *gorm.DB) HallRepo {
+	return &hallRepoGorm{
+		db: tx,
+	}
+}
 
 func NewHallRepoGorm(db *gorm.DB) *hallRepoGorm {
 	return &hallRepoGorm{

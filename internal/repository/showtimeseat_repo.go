@@ -9,6 +9,7 @@ import (
 )
 
 type ShowtimeSeatRepo interface {
+	WithTx(tx *gorm.DB) ShowtimeSeatRepo
 	Create(showtimeSeat *model.ShowtimeSeat) error
 	CreateBatch(showtimeSeats []model.ShowtimeSeat) error
 	GetByID(id uint) (*model.ShowtimeSeat, error)
@@ -29,6 +30,12 @@ var _ ShowtimeSeatRepo = (*showtimeSeatRepoGorm)(nil)
 func NewShowtimeSeatRepoGorm(db *gorm.DB) *showtimeSeatRepoGorm {
 	return &showtimeSeatRepoGorm{
 		db: db,
+	}
+}
+
+func (r *showtimeSeatRepoGorm) WithTx(tx *gorm.DB) ShowtimeSeatRepo {
+	return &showtimeSeatRepoGorm{
+		db: tx,
 	}
 }
 

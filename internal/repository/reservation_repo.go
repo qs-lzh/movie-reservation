@@ -9,6 +9,7 @@ import (
 )
 
 type ReservationRepo interface {
+	WithTx(tx *gorm.DB) ReservationRepo
 	Create(reservation *model.Reservation) error
 	GetByID(id uint) (*model.Reservation, error)
 	DeleteByID(id uint) error
@@ -25,6 +26,12 @@ var _ ReservationRepo = (*reservationRepoGorm)(nil)
 func NewReservationRepoGorm(db *gorm.DB) *reservationRepoGorm {
 	return &reservationRepoGorm{
 		db: db,
+	}
+}
+
+func (r *reservationRepoGorm) WithTx(tx *gorm.DB) ReservationRepo {
+	return &reservationRepoGorm{
+		db: tx,
 	}
 }
 

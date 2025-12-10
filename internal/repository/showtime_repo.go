@@ -9,6 +9,7 @@ import (
 )
 
 type ShowtimeRepo interface {
+	WithTx(tx *gorm.DB) ShowtimeRepo
 	Create(showtime *model.Showtime) error
 	GetByID(id uint) (*model.Showtime, error)
 	DeleteByID(id uint) error
@@ -27,6 +28,12 @@ var _ ShowtimeRepo = (*showtimeRepoGorm)(nil)
 func NewShowtimeRepoGorm(db *gorm.DB) *showtimeRepoGorm {
 	return &showtimeRepoGorm{
 		db: db,
+	}
+}
+
+func (r *showtimeRepoGorm) WithTx(tx *gorm.DB) ShowtimeRepo {
+	return &showtimeRepoGorm{
+		db: tx,
 	}
 }
 

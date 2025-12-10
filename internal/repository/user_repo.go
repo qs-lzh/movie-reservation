@@ -8,6 +8,7 @@ import (
 )
 
 type UserRepo interface {
+	WithTx(tx *gorm.DB) UserRepo
 	Create(user *model.User) error
 	DeleteByName(name string) error
 	GetByName(name string) (*model.User, error)
@@ -22,6 +23,12 @@ var _ UserRepo = (*userRepoGorm)(nil)
 func NewUserRepoGorm(db *gorm.DB) *userRepoGorm {
 	return &userRepoGorm{
 		db: db,
+	}
+}
+
+func (r *userRepoGorm) WithTx(tx *gorm.DB) UserRepo {
+	return &userRepoGorm{
+		db: tx,
 	}
 }
 

@@ -9,7 +9,6 @@ import (
 )
 
 type HallService interface {
-	// WARNING: use seatService.InitSeatsForHall
 	CreateHall(hall *model.Hall) error
 	UpdateHall(hall *model.Hall) error
 	DeleteHallByID(id uint) error
@@ -38,10 +37,12 @@ func NewHallService(db *gorm.DB, hallRepo repository.HallRepo, seatService SeatS
 }
 
 func (s *hallService) CreateHall(hall *model.Hall) error {
-	if err := s.repo.Create(hall); err != nil {
-		return err
-	}
-	return s.seatService.InitSeatsForHall(hall)
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := s.repo.Create(hall); err != nil {
+			return err
+		}
+		return s.seatService.InitSeatsForHall(hall)
+	})
 }
 
 func (s *hallService) UpdateHall(hall *model.Hall) error {

@@ -14,6 +14,7 @@ import (
 
 type ShowtimeSeatService interface {
 	CreateShowtimeSeat(showtimeSeat *model.ShowtimeSeat) error
+	// WARNING: transacion not right, having other service
 	InitShowtimeSeatsForShowtime(showtime *model.Showtime) error
 	GetShowtimeSeatByID(id uint) (*model.ShowtimeSeat, error)
 	GetShowtimeSeatByShowtimeIDSeatID(showtimeID, seatID uint) (*model.ShowtimeSeat, error)

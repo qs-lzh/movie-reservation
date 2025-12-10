@@ -9,6 +9,7 @@ import (
 )
 
 type MovieRepo interface {
+	WithTx(tx *gorm.DB) MovieRepo
 	Create(movie *model.Movie) error
 	GetByID(id uint) (*model.Movie, error)
 	GetByTitle(title string) (*model.Movie, error)
@@ -26,6 +27,12 @@ var _ MovieRepo = (*movieRepoGorm)(nil)
 func NewMovieRepoGorm(db *gorm.DB) *movieRepoGorm {
 	return &movieRepoGorm{
 		db: db,
+	}
+}
+
+func (r *movieRepoGorm) WithTx(tx *gorm.DB) MovieRepo {
+	return &movieRepoGorm{
+		db: tx,
 	}
 }
 
