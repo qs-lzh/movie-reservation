@@ -46,12 +46,15 @@ func New(config *config.Config, db *gorm.DB, cache *cache.RedisCache, logger *za
 	seatRepo := repository.NewSeatRepoGorm(db)
 	showtimeSeatRepo := repository.NewShowtimeSeatRepoGorm(db)
 
-	userService := service.NewUserService(db, userRepo)
 	seatService := service.NewseatService(db, seatRepo)
 	showtimeSeatService := service.NewShowtimeSeatService(db, showtimeSeatRepo, seatService)
 	showtimeService := service.NewShowtimeService(db, showtimeRepo, showtimeSeatService)
-	reservationService := service.NewReservationService(db, reservationRepo, showtimeRepo, showtimeSeatService)
+	hallService := service.NewHallService(db, hallRepo, seatService, showtimeService)
+	reservationService := service.NewReservationService(db, reservationRepo, showtimeRepo, hallRepo, showtimeSeatService)
+	movieService := service.NewMovieService(db, movieRepo, showtimeSeatService, showtimeService)
+	userService := service.NewUserService(db, userRepo, reservationService)
 	captchaService := service.NewCaptchaService(cache)
+	authService := service.NewJWTAuthService(userService)
 
 	return &App{
 		Config:              config,
@@ -59,13 +62,13 @@ func New(config *config.Config, db *gorm.DB, cache *cache.RedisCache, logger *za
 		Cache:               cache,
 		Logger:              logger,
 		UserService:         userService,
-		MovieService:        service.NewMovieService(db, movieRepo, showtimeSeatService),
+		MovieService:        movieService,
 		ShowtimeService:     showtimeService,
 		ReservationService:  reservationService,
-		HallService:         service.NewHallService(db, hallRepo, seatService),
+		HallService:         hallService,
 		SeatService:         seatService,
 		ShowtimeSeatService: showtimeSeatService,
-		AuthService:         service.NewJWTAuthService(userService),
+		AuthService:         authService,
 		CaptchaService:      captchaService,
 	}
 }
