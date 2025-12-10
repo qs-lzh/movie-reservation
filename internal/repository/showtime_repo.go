@@ -13,6 +13,7 @@ type ShowtimeRepo interface {
 	GetByID(id uint) (*model.Showtime, error)
 	DeleteByID(id uint) error
 	GetByMovieID(movieID uint) ([]model.Showtime, error)
+	GetByHallID(hallID uint) ([]model.Showtime, error)
 	DeleteByMovieID(movieID uint) error
 	ListAll() ([]model.Showtime, error)
 }
@@ -58,6 +59,15 @@ func (r *showtimeRepoGorm) DeleteByID(id uint) error {
 func (r *showtimeRepoGorm) GetByMovieID(movieID uint) ([]model.Showtime, error) {
 	ctx := context.Background()
 	showtimes, err := gorm.G[model.Showtime](r.db).Where(&model.Showtime{MovieID: movieID}).Find(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return showtimes, nil
+}
+
+func (r *showtimeRepoGorm) GetByHallID(hallID uint) ([]model.Showtime, error) {
+	ctx := context.Background()
+	showtimes, err := gorm.G[model.Showtime](r.db).Where(&model.Showtime{HallID: hallID}).Find(ctx)
 	if err != nil {
 		return nil, err
 	}

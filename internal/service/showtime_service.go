@@ -11,11 +11,15 @@ import (
 )
 
 type ShowtimeService interface {
+	// WARNING: use showtimeSeatService.InitShowtimeSeatsForShowtime
 	CreateShowtime(movieID uint, startTime time.Time, hallID uint) error
+	// WARNING: update related resources
 	UpdateShowtime(showtimeID uint, startTime time.Time, hallID uint) error
+	// WARNING: delete related resources
 	DeleteShowtimeByID(showtimeID uint) error
 	GetShowtimeByID(showtimeID uint) (*model.Showtime, error)
 	GetShowtimesByMovieID(movieID uint) ([]model.Showtime, error)
+	GetShowtimesByHallID(hallID uint) ([]model.Showtime, error)
 	GetAllShowtimes() ([]model.Showtime, error)
 }
 
@@ -92,6 +96,14 @@ func (s *showtimeService) GetShowtimeByID(showtimeID uint) (*model.Showtime, err
 
 func (s *showtimeService) GetShowtimesByMovieID(movieID uint) ([]model.Showtime, error) {
 	showtimes, err := s.repo.GetByMovieID(uint(movieID))
+	if err != nil {
+		return nil, err
+	}
+	return showtimes, nil
+}
+
+func (s *showtimeService) GetShowtimesByHallID(hallID uint) ([]model.Showtime, error) {
+	showtimes, err := s.repo.GetByMovieID(uint(hallID))
 	if err != nil {
 		return nil, err
 	}

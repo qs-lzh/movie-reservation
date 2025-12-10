@@ -12,6 +12,7 @@ import (
 
 type UserService interface {
 	CreateUser(userName, password string, role model.UserRole) error
+	// WARNING: need to delete related resources
 	DeleteUser(userName string, password string) error
 	ValidateUser(userName string, password string) (bool, error)
 	GetUserRoleByName(userName string) (model.UserRole, error)

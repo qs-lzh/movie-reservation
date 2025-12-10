@@ -9,11 +9,17 @@ import (
 	"github.com/qs-lzh/movie-reservation/internal/repository"
 )
 
+/*
+* SeatService should only be used by hall service
+* So SeatService do not examine if the operand is allowed or is safe
+ */
+
 type SeatService interface {
 	CreateSeat(seat *model.Seat) error
 	InitSeatsForHall(hall *model.Hall) error
 	GetSeatByID(id uint) (*model.Seat, error)
 	GetSeatsByHallID(hallID uint) ([]model.Seat, error)
+	// DeleteSeatByID do not examine if it is allowed to delete,
 	DeleteSeatByID(id uint) error
 }
 
@@ -68,17 +74,17 @@ func (s *seatService) GetSeatByID(id uint) (*model.Seat, error) {
 	return seat, nil
 }
 
-func (s *seatService) DeleteSeatByID(id uint) error {
-	if err := s.repo.DeleteByID(id); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *seatService) GetSeatsByHallID(hallID uint) ([]model.Seat, error) {
 	seats, err := s.repo.GetByHallID(hallID)
 	if err != nil {
 		return nil, err
 	}
 	return seats, nil
+}
+
+func (s *seatService) DeleteSeatByID(id uint) error {
+	if err := s.repo.DeleteByID(id); err != nil {
+		return err
+	}
+	return nil
 }

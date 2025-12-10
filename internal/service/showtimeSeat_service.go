@@ -8,6 +8,10 @@ import (
 	"gorm.io/gorm"
 )
 
+/*
+* ShowtimeSeatService do not examine if the operand is allowed or is safe
+ */
+
 type ShowtimeSeatService interface {
 	CreateShowtimeSeat(showtimeSeat *model.ShowtimeSeat) error
 	InitShowtimeSeatsForShowtime(showtime *model.Showtime) error
@@ -43,20 +47,22 @@ func (s *showtimeSeatService) CreateShowtimeSeat(showtimeSeat *model.ShowtimeSea
 }
 
 func (s *showtimeSeatService) InitShowtimeSeatsForShowtime(showtime *model.Showtime) error {
-	hallID := showtime.HallID
-	seats, err := s.seatService.GetSeatsByHallID(hallID)
-	if err != nil {
-		return err
-	}
-	var showtimeSeats []model.ShowtimeSeat
-	for _, seat := range seats {
-		showtimeSeats = append(showtimeSeats, model.ShowtimeSeat{
-			ShowtimeID: showtime.ID,
-			SeatID:     seat.ID,
-			Status:     model.StatusAvailable,
-		})
-	}
-	return s.repo.CreateBatch(showtimeSeats)
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		hallID := showtime.HallID
+		seats, err := s.seatService.GetSeatsByHallID(hallID)
+		if err != nil {
+			return err
+		}
+		var showtimeSeats []model.ShowtimeSeat
+		for _, seat := range seats {
+			showtimeSeats = append(showtimeSeats, model.ShowtimeSeat{
+				ShowtimeID: showtime.ID,
+				SeatID:     seat.ID,
+				Status:     model.StatusAvailable,
+			})
+		}
+		return s.repo.CreateBatch(showtimeSeats)
+	})
 }
 
 func (s *showtimeSeatService) GetShowtimeSeatByID(id uint) (*model.ShowtimeSeat, error) {

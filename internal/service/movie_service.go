@@ -10,7 +10,9 @@ import (
 
 type MovieService interface {
 	CreateMovie(movie *model.Movie) error
+	// UpdateMovie only allows to update the movie having no related showtime
 	UpdateMovie(movie *model.Movie) error
+	// DeleteMovieByID only allows to delete the movie having no related showtime
 	DeleteMovieByID(id uint) error
 	GetMovieByID(id uint) (*model.Movie, error)
 	GetMovieByTitle(title string) (*model.Movie, error)
@@ -20,15 +22,18 @@ type MovieService interface {
 type movieService struct {
 	db                  *gorm.DB
 	repo                repository.MovieRepo
+	showtimeService     ShowtimeService
 	showtimeSeatService ShowtimeSeatService
 }
 
 var _ MovieService = (*movieService)(nil)
 
-func NewMovieService(db *gorm.DB, movieRepo repository.MovieRepo, showtimeSeatService ShowtimeSeatService) *movieService {
+func NewMovieService(db *gorm.DB, movieRepo repository.MovieRepo, showtimeSeatService ShowtimeSeatService,
+	showtimeService ShowtimeService) *movieService {
 	return &movieService{
 		db:                  db,
 		repo:                movieRepo,
+		showtimeService:     showtimeService,
 		showtimeSeatService: showtimeSeatService,
 	}
 }
@@ -40,15 +45,26 @@ func (s *movieService) CreateMovie(movie *model.Movie) error {
 	return nil
 }
 
+var ErrRelatedResourceExists = errors.New("There's are related resources, so can't change")
+
 // Update movie by ID
 func (s *movieService) UpdateMovie(movie *model.Movie) error {
-	// First, verify that the movie with this ID exists
+	// Verify the movie with this ID exists
 	existingMovie, err := s.repo.GetByID(uint(movie.ID))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrNotFound
 		}
 		return err
+	}
+
+	// Not allowed to update if related showtime exists
+	relatedShowtimes, err := s.showtimeService.GetShowtimesByMovieID(movie.ID)
+	if err != nil {
+		return err
+	}
+	if len(relatedShowtimes) != 0 {
+		return ErrRelatedResourceExists
 	}
 
 	// check if the new title is already used by another
@@ -67,6 +83,15 @@ func (s *movieService) UpdateMovie(movie *model.Movie) error {
 }
 
 func (s *movieService) DeleteMovieByID(id uint) error {
+	// Not allowed to delete if related showtime exists
+	relatedShowtimes, err := s.showtimeService.GetShowtimesByMovieID(id)
+	if err != nil {
+		return err
+	}
+	if len(relatedShowtimes) != 0 {
+		return ErrRelatedResourceExists
+	}
+
 	return s.repo.DeleteByID(id)
 }
 

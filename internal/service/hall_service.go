@@ -9,6 +9,7 @@ import (
 )
 
 type HallService interface {
+	// WARNING: use seatService.InitSeatsForHall
 	CreateHall(hall *model.Hall) error
 	UpdateHall(hall *model.Hall) error
 	DeleteHallByID(id uint) error
@@ -18,18 +19,21 @@ type HallService interface {
 }
 
 type hallService struct {
-	db          *gorm.DB
-	repo        repository.HallRepo
-	seatService SeatService
+	db              *gorm.DB
+	repo            repository.HallRepo
+	seatService     SeatService
+	showtimeService ShowtimeService
 }
 
 var _ HallService = (*hallService)(nil)
 
-func NewHallService(db *gorm.DB, hallRepo repository.HallRepo, seatService SeatService) *hallService {
+func NewHallService(db *gorm.DB, hallRepo repository.HallRepo, seatService SeatService,
+	showtimeService ShowtimeService) *hallService {
 	return &hallService{
-		db:          db,
-		repo:        hallRepo,
-		seatService: seatService,
+		db:              db,
+		repo:            hallRepo,
+		seatService:     seatService,
+		showtimeService: showtimeService,
 	}
 }
 
@@ -41,9 +45,16 @@ func (s *hallService) CreateHall(hall *model.Hall) error {
 }
 
 func (s *hallService) UpdateHall(hall *model.Hall) error {
-	// NOTE: Ensure no related Seat and ShowtimeSeat
+	// verify no related Showtime
+	relatedShowtimes, err := s.showtimeService.GetShowtimesByHallID(hall.ID)
+	if err != nil {
+		return err
+	}
+	if len(relatedShowtimes) != 0 {
+		return ErrRelatedResourceExists
+	}
 
-	// Verify that the hall with this ID exists
+	// verify that the hall with this ID exists
 	existinghall, err := s.repo.GetByID(uint(hall.ID))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -68,7 +79,14 @@ func (s *hallService) UpdateHall(hall *model.Hall) error {
 }
 
 func (s *hallService) DeleteHallByID(id uint) error {
-	// NOTE: Ensure no related Showtime and Seat and ShowtimeSeat
+	// verify no related showtime exists
+	relatedShowtimes, err := s.showtimeService.GetShowtimesByHallID(id)
+	if err != nil {
+		return err
+	}
+	if len(relatedShowtimes) != 0 {
+		return ErrRelatedResourceExists
+	}
 
 	if err := s.repo.DeleteByID(id); err != nil {
 		return err

@@ -10,8 +10,11 @@ import (
 )
 
 type ReservationService interface {
+	// WARNING: need transaction
 	Reserve(userID, showtimeID, seatID uint) error
+	// WARNING: need transaction
 	CancelReservation(reservationID uint) error
+	// WARNING: need transaction
 	GetRemainingTickets(showtimeID uint) (int, error)
 	GetReservationsByUserID(userID uint) ([]model.Reservation, error)
 	GetReservationByID(reservationID uint) (*model.Reservation, error)
@@ -105,7 +108,9 @@ func (s *reservationService) Reserve(userID, showtimeID, seatID uint) error {
 	})
 }
 
-func (s *reservationService) ensureTicketAvailable()
+func (s *reservationService) ensureTicketAvailable() {
+
+}
 
 func (s *reservationService) CancelReservation(reservationID uint) error {
 	reservation, err := s.repo.GetByID(reservationID)
