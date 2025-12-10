@@ -49,50 +49,54 @@ var ErrRelatedResourceExists = errors.New("There's are related resources, so can
 
 // Update movie by ID
 func (s *movieService) UpdateMovie(movie *model.Movie) error {
-	// Verify the movie with this ID exists
-	existingMovie, err := s.repo.GetByID(uint(movie.ID))
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrNotFound
-		}
-		return err
-	}
-
-	// Not allowed to update if related showtime exists
-	relatedShowtimes, err := s.showtimeService.GetShowtimesByMovieID(movie.ID)
-	if err != nil {
-		return err
-	}
-	if len(relatedShowtimes) != 0 {
-		return ErrRelatedResourceExists
-	}
-
-	// check if the new title is already used by another
-	// because the title needs to be unique
-	if existingMovie.Title != movie.Title {
-		anotherMovie, err := s.repo.GetByTitle(movie.Title)
-		if err == nil && anotherMovie != nil && anotherMovie.ID != movie.ID {
-			return ErrAlreadyExists
-		}
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Verify the movie with this ID exists
+		existingMovie, err := s.repo.WithTx(tx).GetByID(uint(movie.ID))
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound
+			}
 			return err
 		}
-	}
 
-	return s.repo.Update(*movie)
+		// Not allowed to update if related showtime exists
+		relatedShowtimes, err := s.showtimeService.GetShowtimesByMovieIDTx(tx, movie.ID)
+		if err != nil {
+			return err
+		}
+		if len(relatedShowtimes) != 0 {
+			return ErrRelatedResourceExists
+		}
+
+		// check if the new title is already used by another
+		// because the title needs to be unique
+		if existingMovie.Title != movie.Title {
+			anotherMovie, err := s.repo.WithTx(tx).GetByTitle(movie.Title)
+			if err == nil && anotherMovie != nil && anotherMovie.ID != movie.ID {
+				return ErrAlreadyExists
+			}
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		}
+
+		return s.repo.WithTx(tx).Update(*movie)
+	})
 }
 
 func (s *movieService) DeleteMovieByID(id uint) error {
-	// Not allowed to delete if related showtime exists
-	relatedShowtimes, err := s.showtimeService.GetShowtimesByMovieID(id)
-	if err != nil {
-		return err
-	}
-	if len(relatedShowtimes) != 0 {
-		return ErrRelatedResourceExists
-	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// Not allowed to delete if related showtime exists
+		relatedShowtimes, err := s.showtimeService.GetShowtimesByMovieIDTx(tx, id)
+		if err != nil {
+			return err
+		}
+		if len(relatedShowtimes) != 0 {
+			return ErrRelatedResourceExists
+		}
 
-	return s.repo.DeleteByID(id)
+		return s.repo.WithTx(tx).DeleteByID(id)
+	})
 }
 
 func (s *movieService) GetMovieByID(id uint) (*model.Movie, error) {

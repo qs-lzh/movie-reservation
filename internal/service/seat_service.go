@@ -20,6 +20,7 @@ type SeatService interface {
 	InitSeatsForHallTx(tx *gorm.DB, hall *model.Hall) error
 	GetSeatByID(id uint) (*model.Seat, error)
 	GetSeatsByHallID(hallID uint) ([]model.Seat, error)
+	GetSeatsByHallIDTx(tx *gorm.DB, hallID uint) ([]model.Seat, error)
 	// DeleteSeatByID do not examine if it is allowed to delete,
 	DeleteSeatByID(id uint) error
 }
@@ -39,10 +40,7 @@ func NewseatService(db *gorm.DB, seatRepo repository.SeatRepo) *seatService {
 var _ SeatService = (*seatService)(nil)
 
 func (s *seatService) CreateSeat(seat *model.Seat) error {
-	if err := s.repo.Create(seat); err != nil {
-		return err
-	}
-	return nil
+	return s.repo.Create(seat)
 }
 
 func (s *seatService) InitSeatsForHall(hall *model.Hall) error {
@@ -82,11 +80,11 @@ func (s *seatService) GetSeatByID(id uint) (*model.Seat, error) {
 }
 
 func (s *seatService) GetSeatsByHallID(hallID uint) ([]model.Seat, error) {
-	seats, err := s.repo.GetByHallID(hallID)
-	if err != nil {
-		return nil, err
-	}
-	return seats, nil
+	return s.GetSeatsByHallIDTx(s.db, hallID)
+}
+
+func (s *seatService) GetSeatsByHallIDTx(tx *gorm.DB, hallID uint) ([]model.Seat, error) {
+	return s.repo.WithTx(tx).GetByHallID(hallID)
 }
 
 func (s *seatService) DeleteSeatByID(id uint) error {

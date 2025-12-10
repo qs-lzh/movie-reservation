@@ -10,13 +10,11 @@ import (
 )
 
 type ReservationService interface {
-	// WARNING: need transaction
 	Reserve(userID, showtimeID, seatID uint) error
-	// WARNING: need transaction
 	CancelReservation(reservationID uint) error
-	// WARNING: need transaction
-	GetRemainingTickets(showtimeID uint) (int, error)
+	GetRemainingTicketsTx(tx *gorm.DB, showtime *model.Showtime) (int, error)
 	GetReservationsByUserID(userID uint) ([]model.Reservation, error)
+	GetReservationsByUserIDTx(tx *gorm.DB, userID uint) ([]model.Reservation, error)
 	GetReservationByID(reservationID uint) (*model.Reservation, error)
 }
 
@@ -42,9 +40,9 @@ func NewReservationService(db *gorm.DB, reservationRepo repository.ReservationRe
 }
 
 func (s *reservationService) Reserve(userID, showtimeID, seatID uint) error {
-	s.db.Transaction(func(tx *gorm.DB) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
 		// check if showtime exists
-		showtime, err := s.showtimeRepo.GetByID(showtimeID)
+		showtime, err := s.showtimeRepo.WithTx(tx).GetByID(showtimeID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return ErrShowtimeNotExist
@@ -52,31 +50,13 @@ func (s *reservationService) Reserve(userID, showtimeID, seatID uint) error {
 			return err
 		}
 
-		// check if the ticket is stil available
-		reservations, err := s.repo.GetByShowtimeID(showtimeID)
-		if err != nil {
-			// gorm.Find returns nil error for no records, so this is a real error
+		// check if there's tickets available
+		if _, err := s.GetRemainingTicketsTx(tx, showtime); err != nil {
 			return err
-		}
-		hall, err := s.hallRepo.GetByID(showtime.HallID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrNotFound
-			}
-			return err
-		}
-		count := hall.SeatCount - len(reservations)
-		if count <= 0 {
-			return ErrNoTicketsAvailable
-		}
-
-		return hall.SeatCount - len(reservations), nil
-		if count <= 0 {
-			return ErrNoTicketsAvailable
 		}
 
 		// check if the user already have the same reservation
-		reservations, err := s.repo.GetByUserID(userID)
+		reservations, err := s.repo.WithTx(tx).GetByUserID(userID)
 		if err != nil {
 			return err
 		}
@@ -87,7 +67,7 @@ func (s *reservationService) Reserve(userID, showtimeID, seatID uint) error {
 		}
 
 		// reserve
-		if err = s.repo.Create(&model.Reservation{
+		if err = s.repo.WithTx(tx).Create(&model.Reservation{
 			ShowtimeID: showtimeID,
 			SeatID:     seatID,
 			UserID:     userID,
@@ -96,73 +76,67 @@ func (s *reservationService) Reserve(userID, showtimeID, seatID uint) error {
 		}
 
 		// change showtimeSeat status
-		showtimeSeat, err := s.showtimeSeatService.GetShowtimeSeatByShowtimeIDSeatID(showtimeID, seatID)
+		showtimeSeat, err := s.showtimeSeatService.GetShowtimeSeatByShowtimeIDSeatIDTx(tx, showtimeID, seatID)
 		if err != nil {
 			return err
 		}
-		if err := s.showtimeSeatService.UpdateShowtimeSeatStatus(showtimeSeat.ID, model.StatusSold); err != nil {
-			return err
-		}
-		return nil
-
+		return s.showtimeSeatService.UpdateShowtimeSeatStatusTx(tx, showtimeSeat.ID, model.StatusSold)
 	})
 }
 
-func (s *reservationService) ensureTicketAvailable() {
-
-}
-
 func (s *reservationService) CancelReservation(reservationID uint) error {
-	reservation, err := s.repo.GetByID(reservationID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrNotFound
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		reservation, err := s.repo.WithTx(tx).GetByID(reservationID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound
+			}
+			return err
 		}
-		return err
-	}
-	if err := s.repo.DeleteByID(reservationID); err != nil {
-		return err
-	}
+		if err := s.repo.WithTx(tx).DeleteByID(reservationID); err != nil {
+			return err
+		}
 
-	// change showtimeSeat status
-	showtimeSeat, err := s.showtimeSeatService.GetShowtimeSeatByShowtimeIDSeatID(reservation.ShowtimeID, reservation.SeatID)
-	if err != nil {
-		return err
-	}
-	if err := s.showtimeSeatService.UpdateShowtimeSeatStatus(showtimeSeat.ID, model.StatusSold); err != nil {
-		return err
-	}
-	return nil
+		// change showtimeSeat status
+		showtimeSeat, err := s.showtimeSeatService.GetShowtimeSeatByShowtimeIDSeatIDTx(tx, reservation.ShowtimeID, reservation.SeatID)
+		if err != nil {
+			return err
+		}
+		return s.showtimeSeatService.UpdateShowtimeSeatStatusTx(tx, showtimeSeat.ID, model.StatusSold)
+	})
 }
 
-func (s *reservationService) GetRemainingTickets(showtimeID uint) (int, error) {
-	reservations, err := s.repo.GetByShowtimeID(showtimeID)
-	if err != nil {
-		// gorm.Find returns nil error for no records, so this is a real error
-		return 0, err
-	}
-	// get total seats
-	showtime, err := s.showtimeRepo.GetByID(showtimeID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return 0, ErrNotFound
+func (s *reservationService) GetRemainingTicketsTx(tx *gorm.DB, showtime *model.Showtime) (int, error) {
+	var remainingTickets int
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		reservations, err := s.repo.WithTx(tx).GetByShowtimeID(showtime.ID)
+		if err != nil {
+			return err
 		}
-		return 0, nil
-	}
-	s.hallRepo.showtime.HallID
+		hall, err := s.hallRepo.WithTx(tx).GetByID(showtime.HallID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+		remainingTickets = hall.SeatCount - len(reservations)
+		if remainingTickets <= 0 {
+			return ErrNoTicketsAvailable
+		}
+		return nil
+	})
 
-	return model.DefaultSeatCount - len(reservations), nil
+	return remainingTickets, err
 }
 
 func (s *reservationService) GetReservationsByUserID(userID uint) ([]model.Reservation, error) {
-	reservations, err := s.repo.GetByUserID(userID)
-	if err != nil {
-		// gorm.Find returns nil error for no records, so this is a real error
-		return nil, err
-	}
-	return reservations, nil
+	return s.GetReservationsByUserIDTx(s.db, userID)
 }
 
+func (s *reservationService) GetReservationsByUserIDTx(tx *gorm.DB, userID uint) ([]model.Reservation, error) {
+	return s.repo.WithTx(tx).GetByUserID(userID)
+}
 func (s *reservationService) GetReservationByID(reservationID uint) (*model.Reservation, error) {
 	reservation, err := s.repo.GetByID(reservationID)
 	if err != nil {

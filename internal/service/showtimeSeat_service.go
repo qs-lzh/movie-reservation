@@ -14,13 +14,15 @@ import (
 
 type ShowtimeSeatService interface {
 	CreateShowtimeSeat(showtimeSeat *model.ShowtimeSeat) error
-	// WARNING: transacion not right, having other service
-	InitShowtimeSeatsForShowtime(showtime *model.Showtime) error
+	InitShowtimeSeatsForShowtimeTx(tx *gorm.DB, showtime *model.Showtime) error
 	GetShowtimeSeatByID(id uint) (*model.ShowtimeSeat, error)
 	GetShowtimeSeatByShowtimeIDSeatID(showtimeID, seatID uint) (*model.ShowtimeSeat, error)
-	GetShowtimeSeatsByShowtimeID(showtimdID uint) ([]model.ShowtimeSeat, error)
+	GetShowtimeSeatByShowtimeIDSeatIDTx(tx *gorm.DB, showtimeID, seatID uint) (*model.ShowtimeSeat, error)
+	GetShowtimeSeatsByShowtimeID(showtimeID uint) ([]model.ShowtimeSeat, error)
+	GetShowtimeSeatsByShowtimeIDTx(tx *gorm.DB, showtimeID uint) ([]model.ShowtimeSeat, error)
 	GetShowtimeSeatsByStatus(status model.ShowtimeSeatStatus) ([]model.ShowtimeSeat, error)
 	UpdateShowtimeSeatStatus(id uint, targetStatus model.ShowtimeSeatStatus) error
+	UpdateShowtimeSeatStatusTx(tx *gorm.DB, id uint, targetStatus model.ShowtimeSeatStatus) error
 	DeleteShowtimeSeatByID(id uint) error
 }
 
@@ -47,23 +49,21 @@ func (s *showtimeSeatService) CreateShowtimeSeat(showtimeSeat *model.ShowtimeSea
 	return nil
 }
 
-func (s *showtimeSeatService) InitShowtimeSeatsForShowtime(showtime *model.Showtime) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		hallID := showtime.HallID
-		seats, err := s.seatService.GetSeatsByHallID(hallID)
-		if err != nil {
-			return err
-		}
-		var showtimeSeats []model.ShowtimeSeat
-		for _, seat := range seats {
-			showtimeSeats = append(showtimeSeats, model.ShowtimeSeat{
-				ShowtimeID: showtime.ID,
-				SeatID:     seat.ID,
-				Status:     model.StatusAvailable,
-			})
-		}
-		return s.repo.CreateBatch(showtimeSeats)
-	})
+func (s *showtimeSeatService) InitShowtimeSeatsForShowtimeTx(tx *gorm.DB, showtime *model.Showtime) error {
+	hallID := showtime.HallID
+	seats, err := s.seatService.GetSeatsByHallIDTx(tx, hallID)
+	if err != nil {
+		return err
+	}
+	var showtimeSeats []model.ShowtimeSeat
+	for _, seat := range seats {
+		showtimeSeats = append(showtimeSeats, model.ShowtimeSeat{
+			ShowtimeID: showtime.ID,
+			SeatID:     seat.ID,
+			Status:     model.StatusAvailable,
+		})
+	}
+	return s.repo.WithTx(tx).CreateBatch(showtimeSeats)
 }
 
 func (s *showtimeSeatService) GetShowtimeSeatByID(id uint) (*model.ShowtimeSeat, error) {
@@ -78,15 +78,19 @@ func (s *showtimeSeatService) GetShowtimeSeatByID(id uint) (*model.ShowtimeSeat,
 }
 
 func (s *showtimeSeatService) GetShowtimeSeatByShowtimeIDSeatID(showtimeID, seatID uint) (*model.ShowtimeSeat, error) {
-	showtimeSeat, err := s.repo.GetByShowIDSeatID(showtimeID, seatID)
-	if err != nil {
-		return nil, err
-	}
-	return showtimeSeat, nil
+	return s.GetShowtimeSeatByShowtimeIDSeatIDTx(s.db, showtimeID, seatID)
+}
+
+func (s *showtimeSeatService) GetShowtimeSeatByShowtimeIDSeatIDTx(tx *gorm.DB, showtimeID, seatID uint) (*model.ShowtimeSeat, error) {
+	return s.repo.WithTx(tx).GetByShowIDSeatID(showtimeID, seatID)
 }
 
 func (s *showtimeSeatService) GetShowtimeSeatsByShowtimeID(showtimeID uint) ([]model.ShowtimeSeat, error) {
-	return s.repo.GetByShowtimeID(showtimeID)
+	return s.GetShowtimeSeatsByShowtimeIDTx(s.db, showtimeID)
+}
+
+func (s *showtimeSeatService) GetShowtimeSeatsByShowtimeIDTx(tx *gorm.DB, showtimeID uint) ([]model.ShowtimeSeat, error) {
+	return s.repo.WithTx(tx).GetByShowtimeID(showtimeID)
 }
 
 func (s *showtimeSeatService) GetShowtimeSeatsByStatus(status model.ShowtimeSeatStatus) ([]model.ShowtimeSeat, error) {
@@ -97,7 +101,13 @@ var ErrShowtimeSeatNotExist = errors.New("The ShowtimeSeat does not exist")
 var ErrShowtimeSeatStatusNotChange = errors.New("The target status of showtimeSeat is the same as the origin")
 
 func (s *showtimeSeatService) UpdateShowtimeSeatStatus(id uint, targetStatus model.ShowtimeSeatStatus) error {
-	existingShowtimeSeat, err := s.repo.GetByID(id)
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return s.UpdateShowtimeSeatStatusTx(tx, id, targetStatus)
+	})
+}
+
+func (s *showtimeSeatService) UpdateShowtimeSeatStatusTx(tx *gorm.DB, id uint, targetStatus model.ShowtimeSeatStatus) error {
+	existingShowtimeSeat, err := s.repo.WithTx(tx).GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrShowtimeSeatNotExist
@@ -110,7 +120,7 @@ func (s *showtimeSeatService) UpdateShowtimeSeatStatus(id uint, targetStatus mod
 	}
 
 	existingShowtimeSeat.Status = targetStatus
-	return s.repo.Update(id, existingShowtimeSeat)
+	return s.repo.WithTx(tx).Update(id, existingShowtimeSeat)
 }
 
 func (s *showtimeSeatService) DeleteShowtimeSeatByID(id uint) error {

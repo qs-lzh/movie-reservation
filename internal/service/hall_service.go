@@ -46,53 +46,54 @@ func (s *hallService) CreateHall(hall *model.Hall) error {
 }
 
 func (s *hallService) UpdateHall(hall *model.Hall) error {
-	// verify no related Showtime
-	relatedShowtimes, err := s.showtimeService.GetShowtimesByHallID(hall.ID)
-	if err != nil {
-		return err
-	}
-	if len(relatedShowtimes) != 0 {
-		return ErrRelatedResourceExists
-	}
-
-	// verify that the hall with this ID exists
-	existinghall, err := s.repo.GetByID(uint(hall.ID))
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrNotFound
-		}
-		return err
-	}
-
-	// check if the new title is already used by another
-	// because the title needs to be unique
-	if existinghall.Name != hall.Name {
-		anotherhall, err := s.repo.GetByName(hall.Name)
-		if err == nil && anotherhall != nil && anotherhall.ID != hall.ID {
-			return ErrAlreadyExists
-		}
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// verify no related Showtime
+		relatedShowtimes, err := s.showtimeService.GetShowtimesByHallIDTx(tx, hall.ID)
+		if err != nil {
 			return err
 		}
-	}
+		if len(relatedShowtimes) != 0 {
+			return ErrRelatedResourceExists
+		}
 
-	return s.repo.Update(hall)
+		// verify that the hall with this ID exists
+		existinghall, err := s.repo.WithTx(tx).GetByID(uint(hall.ID))
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound
+			}
+			return err
+		}
+
+		// check if the new title is already used by another
+		// because the title needs to be unique
+		if existinghall.Name != hall.Name {
+			anotherhall, err := s.repo.WithTx(tx).GetByName(hall.Name)
+			if err == nil && anotherhall != nil && anotherhall.ID != hall.ID {
+				return ErrAlreadyExists
+			}
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+		}
+
+		return s.repo.WithTx(tx).Update(hall)
+	})
 }
 
 func (s *hallService) DeleteHallByID(id uint) error {
-	// verify no related showtime exists
-	relatedShowtimes, err := s.showtimeService.GetShowtimesByHallID(id)
-	if err != nil {
-		return err
-	}
-	if len(relatedShowtimes) != 0 {
-		return ErrRelatedResourceExists
-	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// verify no related showtime exists
+		relatedShowtimes, err := s.showtimeService.GetShowtimesByHallIDTx(tx, id)
+		if err != nil {
+			return err
+		}
+		if len(relatedShowtimes) != 0 {
+			return ErrRelatedResourceExists
+		}
 
-	if err := s.repo.DeleteByID(id); err != nil {
-		return err
-	}
-	return nil
+		return s.repo.WithTx(tx).DeleteByID(id)
+	})
 }
 
 func (s *hallService) GetHallByID(id uint) (*model.Hall, error) {

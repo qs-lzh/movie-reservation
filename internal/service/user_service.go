@@ -12,7 +12,6 @@ import (
 
 type UserService interface {
 	CreateUser(userName, password string, role model.UserRole) error
-	// WARNING: need to delete related resources
 	DeleteUser(userName string, password string) error
 	ValidateUser(userName string, password string) (bool, error)
 	GetUserRoleByName(userName string) (model.UserRole, error)
@@ -20,52 +19,62 @@ type UserService interface {
 }
 
 type userService struct {
-	db     *gorm.DB
-	repo   repository.UserRepo
-	hasher security.PasswordHasher
+	db                 *gorm.DB
+	hasher             security.PasswordHasher
+	repo               repository.UserRepo
+	reservationService ReservationService
 }
 
 var _ UserService = (*userService)(nil)
 
-func NewUserService(db *gorm.DB, userRepo repository.UserRepo) *userService {
+func NewUserService(db *gorm.DB, userRepo repository.UserRepo, reservationService ReservationService) *userService {
 	return &userService{
-		db:     db,
-		repo:   userRepo,
-		hasher: security.NewBcryptHasher(10),
+		db:                 db,
+		hasher:             security.NewBcryptHasher(10),
+		repo:               userRepo,
+		reservationService: reservationService,
 	}
 }
 
 func (s *userService) CreateUser(userName, password string, role model.UserRole) error {
-	_, err := s.repo.GetByName(userName)
-	if err == nil {
-		return ErrAlreadyExists
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-	hash, err := s.hasher.Hash(password)
-	if err != nil {
-		return err
-	}
-	return s.repo.Create(&model.User{
-		Name:           userName,
-		HashedPassword: hash,
-		Role:           role,
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		_, err := s.repo.WithTx(tx).GetByName(userName)
+		if err == nil {
+			return ErrAlreadyExists
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		hash, err := s.hasher.Hash(password)
+		if err != nil {
+			return err
+		}
+		return s.repo.WithTx(tx).Create(&model.User{
+			Name:           userName,
+			HashedPassword: hash,
+			Role:           role,
+		})
 	})
 }
 
 func (s *userService) DeleteUser(userName string, password string) error {
-	user, err := s.repo.GetByName(userName)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrNotFound
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		user, err := s.repo.WithTx(tx).GetByName(userName)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrNotFound
+			}
+			return err
 		}
-		return err
-	}
-	if err = s.hasher.Compare(user.HashedPassword, password); err != nil {
-		return ErrInvalidCredential
-	}
-	return s.repo.DeleteByName(userName)
+		if err = s.hasher.Compare(user.HashedPassword, password); err != nil {
+			return ErrInvalidCredential
+		}
+
+		// ensure no related reservation
+		s.reservationService.GetReservationsByUserIDTx(tx, user.ID)
+
+		return s.repo.WithTx(tx).DeleteByName(userName)
+	})
 }
 
 func (s *userService) ValidateUser(userName string, password string) (bool, error) {
