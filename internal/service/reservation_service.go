@@ -80,7 +80,7 @@ func (s *reservationService) Reserve(userID, showtimeID, seatID uint) error {
 		if err != nil {
 			return err
 		}
-		return s.showtimeSeatService.UpdateShowtimeSeatStatusTx(tx, showtimeSeat.ID, model.StatusSold)
+		return s.showtimeSeatService.UpdateShowtimeSeatStatusToLockedTx(tx, showtimeSeat.ID)
 	})
 }
 
@@ -102,7 +102,7 @@ func (s *reservationService) CancelReservation(reservationID uint) error {
 		if err != nil {
 			return err
 		}
-		return s.showtimeSeatService.UpdateShowtimeSeatStatusTx(tx, showtimeSeat.ID, model.StatusSold)
+		return s.showtimeSeatService.UpdateShowtimeSeatStatusToAvailableTx(tx, showtimeSeat.ID)
 	})
 }
 

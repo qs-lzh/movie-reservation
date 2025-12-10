@@ -21,8 +21,10 @@ type ShowtimeSeatService interface {
 	GetShowtimeSeatsByShowtimeID(showtimeID uint) ([]model.ShowtimeSeat, error)
 	GetShowtimeSeatsByShowtimeIDTx(tx *gorm.DB, showtimeID uint) ([]model.ShowtimeSeat, error)
 	GetShowtimeSeatsByStatus(status model.ShowtimeSeatStatus) ([]model.ShowtimeSeat, error)
-	UpdateShowtimeSeatStatus(id uint, targetStatus model.ShowtimeSeatStatus) error
-	UpdateShowtimeSeatStatusTx(tx *gorm.DB, id uint, targetStatus model.ShowtimeSeatStatus) error
+	updateShowtimeSeatStatusTx(tx *gorm.DB, id uint, targetStatus model.ShowtimeSeatStatus) error
+	UpdateShowtimeSeatStatusToAvailableTx(tx *gorm.DB, id uint) error
+	UpdateShowtimeSeatStatusToLockedTx(tx *gorm.DB, id uint) error
+	UpdateShowtimeSeatStatusToSoldTx(tx *gorm.DB, id uint) error
 	DeleteShowtimeSeatByID(id uint) error
 }
 
@@ -100,13 +102,7 @@ func (s *showtimeSeatService) GetShowtimeSeatsByStatus(status model.ShowtimeSeat
 var ErrShowtimeSeatNotExist = errors.New("The ShowtimeSeat does not exist")
 var ErrShowtimeSeatStatusNotChange = errors.New("The target status of showtimeSeat is the same as the origin")
 
-func (s *showtimeSeatService) UpdateShowtimeSeatStatus(id uint, targetStatus model.ShowtimeSeatStatus) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		return s.UpdateShowtimeSeatStatusTx(tx, id, targetStatus)
-	})
-}
-
-func (s *showtimeSeatService) UpdateShowtimeSeatStatusTx(tx *gorm.DB, id uint, targetStatus model.ShowtimeSeatStatus) error {
+func (s *showtimeSeatService) updateShowtimeSeatStatusTx(tx *gorm.DB, id uint, targetStatus model.ShowtimeSeatStatus) error {
 	existingShowtimeSeat, err := s.repo.WithTx(tx).GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -121,6 +117,15 @@ func (s *showtimeSeatService) UpdateShowtimeSeatStatusTx(tx *gorm.DB, id uint, t
 
 	existingShowtimeSeat.Status = targetStatus
 	return s.repo.WithTx(tx).Update(id, existingShowtimeSeat)
+}
+func (s *showtimeSeatService) UpdateShowtimeSeatStatusToAvailableTx(tx *gorm.DB, id uint) error {
+	return s.updateShowtimeSeatStatusTx(tx, id, model.StatusAvailable)
+}
+func (s *showtimeSeatService) UpdateShowtimeSeatStatusToLockedTx(tx *gorm.DB, id uint) error {
+	return s.updateShowtimeSeatStatusTx(tx, id, model.StatusLocked)
+}
+func (s *showtimeSeatService) UpdateShowtimeSeatStatusToSoldTx(tx *gorm.DB, id uint) error {
+	return s.updateShowtimeSeatStatusTx(tx, id, model.StatusSold)
 }
 
 func (s *showtimeSeatService) DeleteShowtimeSeatByID(id uint) error {
