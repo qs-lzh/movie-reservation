@@ -38,10 +38,10 @@ func NewHallService(db *gorm.DB, hallRepo repository.HallRepo, seatService SeatS
 
 func (s *hallService) CreateHall(hall *model.Hall) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := s.repo.Create(hall); err != nil {
+		if err := s.repo.WithTx(tx).Create(hall); err != nil {
 			return err
 		}
-		return s.seatService.InitSeatsForHall(hall)
+		return s.seatService.InitSeatsForHallTx(tx, hall)
 	})
 }
 

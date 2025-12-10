@@ -17,6 +17,7 @@ import (
 type SeatService interface {
 	CreateSeat(seat *model.Seat) error
 	InitSeatsForHall(hall *model.Hall) error
+	InitSeatsForHallTx(tx *gorm.DB, hall *model.Hall) error
 	GetSeatByID(id uint) (*model.Seat, error)
 	GetSeatsByHallID(hallID uint) ([]model.Seat, error)
 	// DeleteSeatByID do not examine if it is allowed to delete,
@@ -45,22 +46,28 @@ func (s *seatService) CreateSeat(seat *model.Seat) error {
 }
 
 func (s *seatService) InitSeatsForHall(hall *model.Hall) error {
-	hallID := hall.ID
-	rows, cols := hall.Rows, hall.Cols
-	var seats []model.Seat
-	for row := range rows {
-		for col := range cols {
-			seats = append(seats, model.Seat{
-				HallID: hallID,
-				Row:    row,
-				Col:    col,
-			})
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return s.InitSeatsForHallTx(s.db, hall)
+	})
+}
+
+func (s *seatService) InitSeatsForHallTx(tx *gorm.DB, hall *model.Hall) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		hallID := hall.ID
+		rows, cols := hall.Rows, hall.Cols
+		var seats []model.Seat
+		for row := range rows {
+			for col := range cols {
+				seats = append(seats, model.Seat{
+					HallID: hallID,
+					Row:    row,
+					Col:    col,
+				})
+			}
 		}
-	}
-	if err := s.repo.CreateBatch(seats); err != nil {
-		return err
-	}
-	return nil
+
+		return s.repo.WithTx(tx).CreateBatch(seats)
+	})
 }
 
 func (s *seatService) GetSeatByID(id uint) (*model.Seat, error) {
